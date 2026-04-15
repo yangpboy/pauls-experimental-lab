@@ -1,0 +1,32 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --color-light-bg: #FAFAFA;
+    --color-light-ink: #333333;
+    --color-light-orange: #FF4E00;
+    --color-light-yellow: #FFC800;
+    --color-light-green: #00E55A;
+    --color-light-gray: #E5E5E5;
+  }
+}
+
+@layer utilities {
+  .glass {
+    @apply bg-white/40 backdrop-blur-2xl border border-white/50 shadow-[0_8px_32px_rgba(0,0,0,0.05)];
+  }
+  
+  .light-pattern {
+    background-image: radial-gradient(var(--color-light-gray) 1px, transparent 1px);
+    background-size: 24px 24px;
+  }
+}
+
+body {
+  @apply antialiased;
+  font-family: 'Inter', sans-serif;
+}

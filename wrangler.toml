@@ -1,0 +1,5 @@
+# Cloudflare Pages — 與 Dashboard 專案 pauls-experimental-lab 相同名稱（更新同一專案）
+# Build: npm run build  →  output: dist
+name = "pauls-experimental-lab"
+compatibility_date = "2024-11-01"
+pages_build_output_dir = "dist"
