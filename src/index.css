@@ -6,12 +6,14 @@
 
 @layer base {
   :root {
-    --color-light-bg: #FAFAFA;
-    --color-light-ink: #333333;
-    --color-light-orange: #FF4E00;
-    --color-light-yellow: #FFC800;
-    --color-light-green: #00E55A;
-    --color-light-gray: #E5E5E5;
+    --color-light-bg: #DEDEDE;
+    --color-light-ink: #2B2B2B;
+    --color-light-teal: #80AAB3;
+    --color-light-coral: #DE5D4E;
+    --color-light-yellow: #F1CE16;
+    --color-light-gray: #DEDEDE;
+    --color-light-orange: var(--color-light-coral);
+    --color-light-green: var(--color-light-teal);
   }
 }
 
@@ -24,9 +26,19 @@
     background-image: radial-gradient(var(--color-light-gray) 1px, transparent 1px);
     background-size: 24px 24px;
   }
+
+  .hide-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+
+  .hide-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
 }
 
 body {
   @apply antialiased;
   font-family: 'Inter', sans-serif;
+  overflow-x: hidden;
 }
