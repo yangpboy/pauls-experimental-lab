@@ -36,8 +36,9 @@ function HeadMesh({
     setLoadError(error instanceof Error ? error.message : 'Unknown error loading model');
   });
   const isMobileCanvas = size.width < 640;
-  const modelX = isMobileCanvas ? 10 : -150;
-  const modelScale = isMobileCanvas ? 405 : 475;
+  const modelX = 0;
+  const modelY = 0;
+  const modelScale = isMobileCanvas ? 625 : 530;
 
   const baseColor = useMemo(() => new THREE.Color('#DE5D4E'), []);
   const clickedColor = useMemo(() => new THREE.Color('#ffffff'), []);
@@ -87,8 +88,9 @@ function HeadMesh({
     if (frameAccumulatorRef.current < 1 / 30) return;
     frameAccumulatorRef.current = 0;
 
-    const targetX = (state.pointer.x * Math.PI) / 5.8;
-    const targetY = (state.pointer.y * Math.PI) / 5.8;
+    const pointerRotationRange = Math.PI / 8.5;
+    const targetX = state.pointer.x * pointerRotationRange;
+    const targetY = state.pointer.y * pointerRotationRange;
 
     groupRef.current.rotation.y += (targetX - groupRef.current.rotation.y) * 0.075;
     groupRef.current.rotation.x += (-targetY - groupRef.current.rotation.x) * 0.075;
@@ -136,7 +138,7 @@ function HeadMesh({
   }
 
   return (
-    <group ref={groupRef} position={[modelX, 0, 0]}>
+    <group ref={groupRef} position={[modelX, modelY, 0]}>
       <mesh
         visible={false}
         onPointerEnter={(event) => {
@@ -176,7 +178,7 @@ export default function PlasterModel3D({
   return (
     <div className="relative h-full w-full pointer-events-auto">
       {hoverTarget && (
-        <div className="pointer-events-none absolute left-[54%] top-[56%] z-20 md:left-[58%] md:top-[58%]">
+        <div className="pointer-events-none absolute left-[66%] top-[66%] z-20 md:left-[78%] md:top-[68%]">
           <img
             src={aboutMeIcon}
             alt="About me"
@@ -184,7 +186,7 @@ export default function PlasterModel3D({
           />
         </div>
       )}
-      <div className="relative flex h-full w-full items-center justify-center scale-[0.92] transition-transform duration-700 sm:scale-[1.02] md:scale-[1.2] lg:scale-[1.28]">
+      <div className="relative flex h-full w-full items-center justify-center scale-[1.12] transition-transform duration-700 md:scale-[1.28] lg:scale-[1.34]">
         <WebGLErrorBoundary
           fallback={
             <div className="flex max-w-md flex-col items-center justify-center rounded-2xl border border-neutral-200 bg-neutral-100 p-8 text-center dark:border-neutral-800 dark:bg-neutral-900">

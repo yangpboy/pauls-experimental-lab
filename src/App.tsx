@@ -477,6 +477,7 @@ export default function App() {
   const [selectedGaragePost, setSelectedGaragePost] = useState<GaragePost | null>(null);
   const [projectLikes, setProjectLikes] = useState(0);
   const [isProjectLiked, setIsProjectLiked] = useState(false);
+  const [isHeadModeHintVisible, setIsHeadModeHintVisible] = useState(false);
 
   const theme = colorMode;
   const themeToggleIcon = colorMode === 'light' ? '/icons/B_ dark.png' : '/icons/W_ light.png';
@@ -489,6 +490,8 @@ export default function App() {
       light: '亮',
       normalMode: '一般模式',
       lowMode: '低效能模式',
+      headModeLabel: '切換頭像效能模式',
+      headModeHint: '點擊切換',
       loadingHead: '載入頭像',
       garageSubtitle: 'Paul 的實驗檔案',
       categories: '分類',
@@ -506,6 +509,8 @@ export default function App() {
       light: 'Light',
       normalMode: 'Normal',
       lowMode: 'Low',
+      headModeLabel: 'Toggle head performance mode',
+      headModeHint: 'Click to switch',
       loadingHead: 'Loading head',
       garageSubtitle: "Paul's experimental archive",
       categories: 'Categories',
@@ -540,6 +545,50 @@ export default function App() {
     { label: text.head, page: 'head' as const },
     { label: text.garage, page: 'garage' as const },
     { label: text.about, page: 'about' as const },
+  ];
+  const heroFiguresIcon = theme === 'dark' ? '/icons/W.背景一.png' : '/icons/B.背景一.png';
+  const heroFiguresSecondaryIcon = theme === 'dark' ? '/icons/W.背景二.png' : '/icons/B.背景二.png';
+  const desktopBackgroundSvg = theme === 'dark'
+    ? '/icons/svg/desktop-background-dark.svg?v=3'
+    : '/icons/svg/desktop-background-asset-8.svg?v=3';
+  const layeredFlowerA = '/icons/svg/flower-layered-a.svg';
+  const layeredFlowerB = '/icons/svg/flower-layered-b.svg';
+  const orangeFlower = '/icons/svg/flower-orange.svg';
+  const navyFlower = '/icons/svg/flower-navy.svg';
+  const socialLinks = [
+    {
+      name: 'Instagram',
+      icon: theme === 'dark' ? '/icons/W_ ig.png' : '/icons/B_ ig.png',
+      href: 'https://www.instagram.com/yangpboy?igsh=MTh0ZXpmaXN3dzF1Mw%3D%3D&utm_source=qr',
+    },
+    {
+      name: 'LinkedIn',
+      icon: theme === 'dark' ? '/icons/W_ linkedln.png' : '/icons/B_ linkedln.png',
+      href: 'https://www.linkedin.com/in/paul-yang-b2755329a',
+    },
+    {
+      name: 'Behance',
+      icon: theme === 'dark' ? '/icons/W_ behance.png' : '/icons/B_ behance.png',
+      href: 'https://www.behance.net/paulyang10',
+    },
+    {
+      name: 'Email',
+      icon: theme === 'dark' ? '/icons/W_ mail.png' : '/icons/B_ mail.png',
+      href: 'mailto:yangpboy02@gmail.com',
+    },
+  ];
+  const heroFlowers = [
+    { src: navyFlower, className: 'hidden md:block left-[31%] top-[34%] w-[clamp(58px,6vw,88px)] rotate-[18deg]' },
+    { src: layeredFlowerA, className: 'hidden md:block left-[35%] top-[57%] w-[clamp(72px,7.3vw,108px)] rotate-[-9deg]' },
+    { src: layeredFlowerB, className: 'hidden md:block right-[31%] top-[27%] w-[clamp(52px,5.2vw,76px)] rotate-[8deg]' },
+    { src: orangeFlower, className: 'hidden md:block right-[31%] top-[53%] w-[clamp(42px,4vw,58px)] rotate-[-10deg]' },
+    { src: layeredFlowerA, className: 'hidden md:block right-[6%] top-[38%] w-[clamp(86px,8.2vw,122px)] rotate-[12deg]', isModeToggle: true },
+
+    { src: layeredFlowerA, className: 'md:hidden left-[10%] top-[28%] w-[80px] rotate-[9deg]' },
+    { src: navyFlower, className: 'md:hidden left-[15%] top-[35%] w-[60px] rotate-[-10deg]' },
+    { src: layeredFlowerB, className: 'md:hidden right-[10%] top-[27%] w-[78px] rotate-[-8deg]', isModeToggle: true },
+    { src: layeredFlowerB, className: 'md:hidden left-[8%] top-[57%] w-[82px] rotate-[-8deg]' },
+    { src: layeredFlowerA, className: 'md:hidden right-[11%] top-[58%] w-[78px] rotate-[-7deg]' },
   ];
 
   useEffect(() => {
@@ -620,21 +669,22 @@ export default function App() {
 
   return (
     <div className="min-h-screen overflow-x-hidden bg-light-gray text-light-ink font-sans selection:bg-light-teal/40 dark:bg-[#111111] dark:text-white">
-      <nav className="pointer-events-none fixed left-0 right-0 top-0 z-[120] flex items-start justify-between gap-4 px-4 py-4 md:px-12 md:py-9">
+      <nav className="pointer-events-none fixed left-0 right-0 top-0 z-[120] flex items-center justify-between gap-4 px-5 py-3 md:px-[5vw] md:py-5">
         <button
           onClick={() => navigateToPage('head')}
-          className="pointer-events-auto max-w-[58vw] bg-white px-3 py-2 text-left font-mono text-[11px] font-black uppercase leading-none tracking-normal shadow-sm transition-transform hover:-translate-y-0.5 dark:bg-[#111111] dark:text-white sm:max-w-none sm:text-base md:px-6 md:py-2.5 md:text-2xl"
+          className="pointer-events-auto max-w-[58vw] bg-white px-2 py-1 text-left font-mono text-[11px] font-normal uppercase leading-none tracking-normal transition hover:-translate-y-0.5 hover:text-light-coral dark:bg-[#111111] dark:text-white sm:max-w-none sm:text-base md:whitespace-nowrap md:text-[28px]"
+          aria-label="Paul's Experimental Lab"
         >
           Paul's Experimental Lab
         </button>
 
         <div className="pointer-events-auto hidden shrink-0 items-center gap-5 md:flex">
-          <div className="flex items-center gap-6 font-mono text-3xl uppercase leading-none">
+          <div className="flex items-center gap-7 font-mono text-[28px] font-normal uppercase leading-none tracking-normal">
             {navItems.map((item) => (
               <button
                 key={item.page}
                 onClick={() => navigateToPage(item.page)}
-                className={`bg-white px-2 py-1 decoration-2 underline-offset-8 transition hover:-translate-y-0.5 hover:text-light-coral dark:bg-[#111111] md:px-3 md:py-1.5 ${
+                className={`bg-white px-2 py-1 decoration-2 underline-offset-8 transition hover:-translate-y-0.5 hover:text-light-coral dark:bg-[#111111] ${
                   activePage === item.page
                     ? 'text-light-coral underline decoration-light-coral dark:text-light-coral'
                     : 'text-light-ink no-underline dark:text-white'
@@ -655,13 +705,6 @@ export default function App() {
                 className="h-7 w-7 object-contain"
               />
             </button>
-            <button
-              type="button"
-              onClick={() => setLanguage((mode) => (mode === 'en' ? 'zh' : 'en'))}
-              className="bg-white px-2 py-1 font-mono text-lg font-black uppercase leading-none transition hover:-translate-y-0.5 hover:text-light-coral dark:bg-[#111111] md:px-3 md:py-1.5"
-            >
-              {language === 'en' ? '中' : 'EN'}
-            </button>
           </div>
         </div>
 
@@ -669,11 +712,11 @@ export default function App() {
           <button
             type="button"
             onClick={() => setIsMobileMenuOpen((open) => !open)}
-            className="grid h-11 w-11 place-items-center border-2 border-light-ink bg-white text-light-ink shadow-sm transition hover:text-light-coral dark:border-white dark:bg-[#111111] dark:text-white"
+            className="grid h-[53px] w-[53px] place-items-center border-2 border-light-ink bg-white text-light-ink transition hover:text-light-coral dark:border-white dark:bg-[#111111] dark:text-white"
             aria-label="Open navigation menu"
             aria-expanded={isMobileMenuOpen}
           >
-            {isMobileMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
+            {isMobileMenuOpen ? <X className="h-7 w-7" /> : <Menu className="h-7 w-7" strokeWidth={2.6} />}
           </button>
         </div>
 
@@ -726,23 +769,103 @@ export default function App() {
       </nav>
 
       <div className="fixed left-5 top-1/2 z-[80] hidden -translate-y-1/2 flex-col items-center justify-center gap-5 md:flex">
-        {[
-          { name: 'Instagram', icon: '/icons/B_ ig.png', href: 'https://www.instagram.com/yangpboy?igsh=MTh0ZXpmaXN3dzF1Mw%3D%3D&utm_source=qr' },
-          { name: 'LinkedIn', icon: '/icons/B_ linkedln.png', href: 'https://www.linkedin.com/in/paul-yang-b2755329a' },
-          { name: 'Behance', icon: '/icons/B_ behance.png', href: 'https://www.behance.net/paulyang10' },
-          { name: 'Email', icon: '/icons/B_ mail.png', href: 'mailto:yangpboy02@gmail.com' },
-        ].map((social) => (
+        {socialLinks.map((social) => (
           <a key={social.name} href={social.href} target="_blank" rel="noopener noreferrer" className="group flex items-center transition-transform hover:-translate-y-1">
-            <img src={social.icon} alt={social.name} className="h-8 w-8 object-contain dark:invert" />
+            <img src={social.icon} alt={social.name} className="h-8 w-8 object-contain" />
           </a>
         ))}
       </div>
 
       {activePage === 'head' && (
         <>
-          <section id="head" className="relative h-[100svh] min-h-[560px] overflow-hidden bg-white dark:bg-[#111111]">
-            <div className="absolute inset-0 flex items-center justify-center px-0 pt-14 sm:px-6 md:pt-20">
-              <div className="h-[74svh] min-h-[500px] w-screen max-w-none sm:h-[70svh] md:h-[76vh] md:min-h-[560px] md:w-[96vw] md:max-w-[1120px]">
+          <section
+            id="head"
+            className="relative z-10 h-[100svh] min-h-[760px] overflow-visible bg-white [--hero-anchor-x:50%] [--hero-anchor-y:43%] [--hero-model-y:43%] dark:bg-[#111111] md:min-h-[620px] md:[--hero-anchor-y:48%] md:[--hero-model-y:50%]"
+          >
+            <div aria-hidden="true" className="pointer-events-none absolute inset-0 overflow-visible">
+              <div
+                data-hero-anchor="backplate"
+                className="absolute left-[var(--hero-anchor-x)] top-[var(--hero-anchor-y)] z-[3] w-[185vw] max-w-none -translate-x-1/2 -translate-y-1/2 md:hidden"
+              >
+                <img
+                  src="/icons/背板1.png"
+                  alt=""
+                  className="h-auto w-full object-contain opacity-[0.98] dark:opacity-90"
+                />
+              </div>
+              <img
+                src={desktopBackgroundSvg}
+                alt=""
+                className="pointer-events-none absolute left-1/2 top-[var(--hero-anchor-y)] z-[3] hidden aspect-[1151.61/726.99] w-[min(76vw,1450px)] max-w-none -translate-x-1/2 -translate-y-1/2 object-contain md:block"
+              />
+              <img
+                src={heroFiguresIcon}
+                alt=""
+                className="absolute left-1/2 top-[7%] z-[1] w-[108vw] max-w-none -translate-x-1/2 object-contain opacity-70 md:hidden"
+              />
+              <img
+                src={heroFiguresSecondaryIcon}
+                alt=""
+                className="absolute left-1/2 top-[50%] z-[1] w-[108vw] max-w-none -translate-x-1/2 rotate-180 object-contain opacity-65 md:hidden"
+              />
+            </div>
+            <div className="pointer-events-none absolute inset-0 z-40 overflow-visible">
+              {heroFlowers.map((flower, index) => flower.isModeToggle ? (
+                <button
+                  key={`head-render-mode-flower-${index}`}
+                  type="button"
+                  aria-label={text.headModeLabel}
+                  aria-describedby={`head-render-mode-tooltip-${index}`}
+                  aria-pressed={headRenderMode === 'low'}
+                  onClick={() => setHeadRenderMode((mode) => (mode === 'normal' ? 'low' : 'normal'))}
+                  onPointerEnter={() => setIsHeadModeHintVisible(true)}
+                  onPointerLeave={() => setIsHeadModeHintVisible(false)}
+                  onFocus={() => setIsHeadModeHintVisible(true)}
+                  onBlur={() => setIsHeadModeHintVisible(false)}
+                  className={`group pointer-events-auto absolute h-auto cursor-pointer touch-manipulation select-none rounded-full border-0 bg-transparent p-0 outline-none transition-transform duration-300 ease-out hover:-translate-y-2 hover:scale-110 focus-visible:ring-4 focus-visible:ring-light-coral/45 ${flower.className}`}
+                >
+                  <span
+                    id={`head-render-mode-tooltip-${index}`}
+                    role="tooltip"
+                    className={`pointer-events-none absolute right-1/2 top-0 z-10 translate-x-1/2 -translate-y-[calc(100%+0.55rem)] whitespace-nowrap border-2 border-light-ink bg-white px-3 py-2 font-mono text-[10px] font-black uppercase leading-none text-light-ink shadow-[5px_5px_0_rgba(43,43,43,0.22)] transition dark:border-white dark:bg-[#111111] dark:text-white md:text-xs ${
+                      isHeadModeHintVisible ? 'opacity-100' : 'opacity-0 group-hover:opacity-100 group-focus-visible:opacity-100'
+                    }`}
+                  >
+                    {headRenderMode === 'normal' ? text.normalMode : text.lowMode}
+                    <span className="mx-2 text-light-coral">/</span>
+                    {text.headModeHint}
+                  </span>
+                  <img
+                    src={flower.src}
+                    alt=""
+                    className="h-auto w-full object-contain transition-transform duration-300 group-hover:rotate-3 group-active:scale-95"
+                    draggable={false}
+                  />
+                </button>
+              ) : (
+                <span
+                  key={`${flower.src}-${index}`}
+                  aria-hidden="true"
+                  className={`group pointer-events-auto absolute h-auto cursor-pointer select-none transition-transform duration-300 ease-out hover:-translate-y-2 hover:scale-110 ${flower.className}`}
+                >
+                  <img
+                    src={flower.src}
+                    alt=""
+                    className="h-auto w-full object-contain transition-transform duration-300 group-hover:rotate-6"
+                    draggable={false}
+                  />
+                </span>
+              ))}
+            </div>
+            <div
+              data-hero-anchor="model-stage"
+              className={`pointer-events-none absolute z-20 h-[72svh] min-h-[620px] w-[158vw] max-w-none -translate-x-1/2 -translate-y-1/2 md:h-[82vh] md:min-h-[620px] md:w-[100vw] md:max-w-[1280px] ${
+                headRenderMode === 'low'
+                  ? 'left-[var(--hero-anchor-x)] top-[var(--hero-anchor-y)]'
+                  : 'left-[calc(var(--hero-anchor-x)-60px)] top-[calc(var(--hero-model-y)-60px)] md:left-[calc(var(--hero-anchor-x)-270px)] md:top-[calc(var(--hero-model-y)-190px)]'
+              }`}
+            >
+              <div className="pointer-events-auto h-full w-full">
                 <Suspense
                   fallback={
                     <div className="flex h-full w-full items-center justify-center font-mono text-sm font-black uppercase tracking-normal text-light-ink/50 dark:text-white/50">
@@ -764,32 +887,9 @@ export default function App() {
                 </Suspense>
               </div>
             </div>
-            <div className="absolute bottom-6 right-5 z-30 flex items-center gap-3 bg-white px-3 py-2 font-mono text-xs font-black uppercase text-light-ink shadow-sm dark:bg-[#111111] dark:text-white md:bottom-8 md:right-10 md:text-sm">
-              <span className={headRenderMode === 'normal' ? 'text-light-coral' : 'text-light-ink/45 dark:text-white/45'}>
-                {text.normalMode}
-              </span>
-              <button
-                type="button"
-                aria-label="Toggle low performance mode"
-                aria-pressed={headRenderMode === 'low'}
-                onClick={() => setHeadRenderMode((mode) => (mode === 'normal' ? 'low' : 'normal'))}
-                className={`relative h-7 w-14 rounded-full border-2 border-light-ink transition dark:border-white ${
-                  headRenderMode === 'low' ? 'bg-light-coral' : 'bg-white dark:bg-[#111111]'
-                }`}
-              >
-                <span
-                  className={`absolute top-1/2 h-4 w-4 -translate-y-1/2 rounded-full bg-light-ink transition dark:bg-white ${
-                    headRenderMode === 'low' ? 'left-[30px]' : 'left-1'
-                  }`}
-                />
-              </button>
-              <span className={headRenderMode === 'low' ? 'text-light-coral' : 'text-light-ink/45 dark:text-white/45'}>
-                {text.lowMode}
-              </span>
-            </div>
           </section>
 
-          <section id="lab" className="relative z-10 flex min-h-[100svh] items-center justify-center bg-white px-6 py-24 text-center dark:bg-[#111111] md:px-16">
+          <section id="lab" className="relative z-0 flex min-h-[100svh] items-center justify-center bg-white px-6 py-24 text-center dark:bg-[#111111] md:px-16">
             <div className="max-w-4xl">
               <h1 className="font-mono text-2xl font-black uppercase tracking-normal md:text-4xl">
                 Paul's Experimental Lab
