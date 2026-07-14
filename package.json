@@ -8,7 +8,8 @@
   },
   "scripts": {
     "dev": "vite --host 0.0.0.0 --port 3000",
-    "build": "tsc && npm run typecheck:functions && vite build",
+    "build": "tsc && npm run typecheck:functions && vite build && npm run bundle:functions",
+    "bundle:functions": "node scripts/bundle-pages-functions.mjs",
     "typecheck:functions": "tsc -p tsconfig.functions.json",
     "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
     "preview": "vite preview",

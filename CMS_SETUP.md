@@ -6,7 +6,7 @@
 - Routing before the CMS change: `src/App.tsx` switched Head, Garage, About, and Sketchbook with React state. There was no routing library. Pages now uses its built-in SPA fallback for `/admin` and `/projects/:slug` (a top-level `404.html` is intentionally not present).
 - Portfolio data before the CMS change: five projects were hard-coded in `src/data/garage.ts`. That file has been removed after its content was converted into `migrations/0002_seed_existing_projects.sql`.
 - Images: static portfolio media remains in `public/works/**`; shared site media is in `public/**` and `public/icons/**`. The database stores URLs only.
-- Deployment: `wrangler.toml` names the existing Pages project `pauls-experimental-lab`; Git-connected Pages builds with `npm run build` and publishes `dist`. `npm run deploy` remains available for a direct Wrangler deploy.
+- Deployment: `wrangler.toml` names the existing Pages project `pauls-experimental-lab`; Git-connected Pages builds with `npm run build` and publishes `dist`. `scripts/bundle-pages-functions.mjs` compiles file-based Functions into `dist/_worker.js` plus `dist/_routes.json`, so Git deployments include API routes in Pages advanced mode. `npm run deploy` remains available for a direct Wrangler deploy.
 - Server code before the CMS change: none. There was no `functions/` directory and no API.
 
 ## New runtime layout
@@ -52,7 +52,7 @@ npx wrangler login
 npx wrangler d1 create pauls-portfolio-cms
 ```
 
-Replace `REPLACE_WITH_D1_DATABASE_ID` in the active `[[d1_databases]]` section of `wrangler.toml` with the returned ID. Keep the binding name exactly `DB`; deployments should not use the placeholder value.
+Set the database ID returned by Cloudflare in the active `[[d1_databases]]` section of `wrangler.toml`. Keep the binding name exactly `DB`; deployments should not use a placeholder value.
 
 Apply both migrations to the remote database:
 
@@ -116,7 +116,7 @@ Set `ASSET_PROVIDER=images`, add `CLOUDFLARE_ACCOUNT_ID`, create an encrypted `C
 1. Run `npm run build` and `npm run lint` locally.
 2. Commit the source, migrations, and lockfile.
 3. Push to the GitHub production branch connected to `pauls-experimental-lab`.
-4. Confirm the Pages build command is `npm run build`, output directory is `dist`, and root directory is `/`.
+4. Confirm the Pages build command is `npm run build`, output directory is `dist`, and root directory is `/`. The build must finish with `dist/_worker.js`; this is the compiled Functions bundle used by Git deployments.
 5. Confirm D1/R2 bindings and variables exist for the environment, then redeploy after any binding change.
 6. Visit `/api/projects` publicly, `/admin` through Access, create a draft, publish it, and verify `/projects/<slug>`.
 

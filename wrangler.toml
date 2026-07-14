@@ -4,15 +4,14 @@ name = "pauls-experimental-lab"
 compatibility_date = "2026-07-13"
 pages_build_output_dir = "dist"
 
-# Add the real database ID returned by `wrangler d1 create` before deploying
-# through Wrangler. If Git deployment uses Dashboard bindings, create the same
-# binding there with the variable name DB.
+# Production D1 binding. Keep the binding name exactly DB.
 [[d1_databases]]
 binding = "DB"
 database_name = "pauls-portfolio-cms"
 database_id = "42782945-2397-4db8-b4cf-7a2216775de7"
 
-# Optional R2 upload provider. Uncomment after creating the bucket.
+# Optional R2 upload provider. Uncomment after creating the bucket and its
+# public custom domain (or r2.dev development URL).
 # [[r2_buckets]]
 # binding = "MEDIA_BUCKET"
 # bucket_name = "pauls-portfolio-media"
