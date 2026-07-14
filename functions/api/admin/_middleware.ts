@@ -11,6 +11,20 @@ export const onRequest: PagesFunction<Env> = async ({ request, env, next }) => {
     return next();
   }
 
+  const allowedEmails = (env.ADMIN_ALLOWED_EMAILS ?? '')
+    .split(',')
+    .map((item) => item.trim().toLowerCase())
+    .filter(Boolean);
+
+  if (allowedEmails.length === 0) {
+    return json({
+      error: {
+        code: 'ADMIN_NOT_CONFIGURED',
+        message: 'Admin access is disabled until an email allowlist is configured.',
+      },
+    }, 503);
+  }
+
   const email = request.headers.get('cf-access-authenticated-user-email')?.trim().toLowerCase();
   if (!email) {
     return json({
@@ -21,12 +35,7 @@ export const onRequest: PagesFunction<Env> = async ({ request, env, next }) => {
     }, 401);
   }
 
-  const allowedEmails = (env.ADMIN_ALLOWED_EMAILS ?? '')
-    .split(',')
-    .map((item) => item.trim().toLowerCase())
-    .filter(Boolean);
-
-  if (allowedEmails.length > 0 && !allowedEmails.includes(email)) {
+  if (!allowedEmails.includes(email)) {
     return json({
       error: {
         code: 'ADMIN_FORBIDDEN',
