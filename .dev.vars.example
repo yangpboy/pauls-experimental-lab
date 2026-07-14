@@ -1,0 +1,12 @@
+# Local Pages Functions only. Copy to .dev.vars; never commit the real file.
+ADMIN_DEV_BYPASS=true
+ADMIN_ALLOWED_EMAILS=you@example.com
+
+# Choose one upload provider. R2 is the default.
+ASSET_PROVIDER=r2
+R2_PUBLIC_BASE_URL=https://media.example.com
+
+# Only required when ASSET_PROVIDER=images.
+CLOUDFLARE_ACCOUNT_ID=
+CLOUDFLARE_IMAGES_API_TOKEN=
+CLOUDFLARE_IMAGES_VARIANT=public

@@ -6,14 +6,33 @@
 import { motion, AnimatePresence } from 'framer-motion';
 import { lazy, Suspense, useRef, useEffect, useState, useMemo } from 'react';
 import { X, Share2, ArrowUpRight, Heart, ChevronLeft, ChevronRight, BookOpen, ArrowDown, Menu } from 'lucide-react';
-import LazyImage from './components/LazyImage';
-import { GARAGE_POSTS, parseGarageDate } from './data/garage';
-import type { GaragePost } from './data/garage';
+import ProjectRenderer from './components/ProjectRenderer';
+import AdminApp from './admin/AdminApp';
+import { CmsApiError, projectsApi } from './lib/api';
+import type { Project, ProjectSummary } from './types/cms';
 
 const PlasterModel3D = lazy(() => import('./components/PlasterModel3D'));
 const LowPerformanceHead = lazy(() => import('./components/LowPerformanceHead'));
 
 const SHOW_SKETCHBOOK = false;
+
+const parseProjectDate = (dateStr: string) => {
+  if (!dateStr) return 0;
+  const firstPart = dateStr.split(/[-~]/)[0].trim();
+  const parts = firstPart.split(/[./]/);
+  if (parts.length === 2) {
+    const month = Number.parseInt(parts[0], 10);
+    const year = Number.parseInt(parts[1], 10);
+    if (Number.isFinite(month) && Number.isFinite(year)) return new Date(year, month - 1).getTime();
+  }
+  const date = new Date(firstPart);
+  return Number.isNaN(date.getTime()) ? 0 : date.getTime();
+};
+
+const projectSlugFromPath = () => {
+  const match = window.location.pathname.match(/^\/projects\/([^/]+)\/?$/);
+  return match ? decodeURIComponent(match[1]) : null;
+};
 
 const SKETCHBOOK_PAGES = [
   {
@@ -54,7 +73,14 @@ const SKETCHBOOK_PAGES = [
   },
 ];
 
-const getDefaultLikes = (id: number) => 20 + ((id * 37) % 100);
+const formatEngagementCount = (value: number) => {
+  if (value < 10_000) return new Intl.NumberFormat('en').format(value);
+
+  return new Intl.NumberFormat('en', {
+    notation: 'compact',
+    maximumFractionDigits: 1,
+  }).format(value);
+};
 
 // Reusable component for scroll reveal animations
 const FadeIn = ({ children, delay = 0, direction = 'up', className = '' }: { children: React.ReactNode, delay?: number, direction?: 'up' | 'left' | 'right', className?: string }) => {
@@ -79,9 +105,11 @@ const FadeIn = ({ children, delay = 0, direction = 'up', className = '' }: { chi
 
 // PO Page Component for Paul's Info
 const POPage = ({ 
-  theme
+  theme,
+  projects,
 }: { 
   theme: 'dark' | 'light';
+  projects: ProjectSummary[];
 }) => {
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const isDragging = useRef(false);
@@ -89,8 +117,8 @@ const POPage = ({
   const scrollLeft = useRef(0);
 
   const timelinePosts = useMemo(
-    () => [...GARAGE_POSTS].sort((a, b) => parseGarageDate(a.date) - parseGarageDate(b.date)),
-    []
+    () => [...projects].sort((a, b) => parseProjectDate(a.projectDate) - parseProjectDate(b.projectDate)),
+    [projects]
   );
 
   return (
@@ -302,7 +330,7 @@ const POPage = ({
                               <div className={`inline-flex items-center gap-3 px-4 py-2 rounded-full border ${theme === 'dark' ? 'bg-black/50 border-white/10' : 'bg-white/50 border-black/10'} backdrop-blur-sm`}>
                                 <span className="w-2 h-2 rounded-full bg-light-coral animate-pulse" />
                                 <span className={`font-mono text-xl md:text-2xl font-bold tracking-tight ${theme === 'dark' ? 'text-white' : 'text-black'}`}>
-                                  {post.date}
+                                  {post.projectDate}
                                 </span>
                               </div>
                               {post.location && (
@@ -321,18 +349,18 @@ const POPage = ({
                                >
                                 <div className="relative w-full aspect-video overflow-hidden border-b border-inherit">
                                   <img 
-                                    src={post.image} 
+                                    src={post.coverImageUrl}
                                     alt={post.title} 
                                     draggable={false}
                                     className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
                                   />
                                   <div className="absolute top-3 right-3 px-2 py-1 text-[10px] font-mono font-bold uppercase tracking-widest bg-black/70 text-white rounded backdrop-blur-md">
-                                    {post.caption || 'PROJECT'}
+                                    {post.category || 'PROJECT'}
                                   </div>
                                 </div>
                                 <div className="p-5 md:p-6">
                                   <h3 className={`font-mono text-xl md:text-2xl font-black mb-2 uppercase tracking-normal ${theme === 'dark' ? 'text-white' : 'text-black'}`}>{post.title}</h3>
-                                  <p className={`text-sm leading-relaxed line-clamp-2 ${theme === 'dark' ? 'text-gray-400' : 'text-gray-600'}`}>{post.description}</p>
+                                  <p className={`text-sm leading-relaxed line-clamp-2 ${theme === 'dark' ? 'text-gray-400' : 'text-gray-600'}`}>{post.summary}</p>
                                 </div>
                               </div>
                             </FadeIn>
@@ -457,7 +485,11 @@ const SketchbookSection = () => {
 };
 
 export default function App() {
-  const [activePage, setActivePage] = useState<'head' | 'garage' | 'sketchbook' | 'about'>('head');
+  return window.location.pathname.startsWith('/admin') ? <AdminApp /> : <PortfolioApp />;
+}
+
+function PortfolioApp() {
+  const [activePage, setActivePage] = useState<'head' | 'garage' | 'sketchbook' | 'about'>(() => projectSlugFromPath() ? 'garage' : 'head');
   const [activeGarageCategory, setActiveGarageCategory] = useState('All');
   const [headRenderMode, setHeadRenderMode] = useState<'normal' | 'low'>('normal');
   const [colorMode, setColorMode] = useState<'light' | 'dark'>(() => {
@@ -474,10 +506,20 @@ export default function App() {
   });
   const [language, setLanguage] = useState<'zh' | 'en'>('en');
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const [selectedGaragePost, setSelectedGaragePost] = useState<GaragePost | null>(null);
+  const [projects, setProjects] = useState<ProjectSummary[]>([]);
+  const [projectsLoading, setProjectsLoading] = useState(true);
+  const [projectsError, setProjectsError] = useState<string | null>(null);
+  const [routeProjectSlug, setRouteProjectSlug] = useState<string | null>(() => projectSlugFromPath());
+  const [selectedProject, setSelectedProject] = useState<Project | null>(null);
+  const [projectLoading, setProjectLoading] = useState(() => Boolean(projectSlugFromPath()));
+  const [projectError, setProjectError] = useState<string | null>(null);
   const [projectLikes, setProjectLikes] = useState(0);
+  const [projectShares, setProjectShares] = useState(0);
   const [isProjectLiked, setIsProjectLiked] = useState(false);
+  const [isProjectLikeUpdating, setIsProjectLikeUpdating] = useState(false);
+  const [isProjectShareUpdating, setIsProjectShareUpdating] = useState(false);
   const [isHeadModeHintVisible, setIsHeadModeHintVisible] = useState(false);
+  const [isThemeModeHintVisible, setIsThemeModeHintVisible] = useState(false);
 
   const theme = colorMode;
   const themeToggleIcon = colorMode === 'light' ? '/icons/B_ dark.png' : '/icons/W_ light.png';
@@ -492,6 +534,8 @@ export default function App() {
       lowMode: '低效能模式',
       headModeLabel: '切換頭像效能模式',
       headModeHint: '點擊切換',
+      themeModeLabel: '切換亮暗模式',
+      themeModeHint: '點擊切換',
       loadingHead: '載入頭像',
       garageSubtitle: 'Paul 的實驗檔案',
       categories: '分類',
@@ -511,6 +555,8 @@ export default function App() {
       lowMode: 'Low',
       headModeLabel: 'Toggle head performance mode',
       headModeHint: 'Click to switch',
+      themeModeLabel: 'Toggle color mode',
+      themeModeHint: 'Click to switch',
       loadingHead: 'Loading head',
       garageSubtitle: "Paul's experimental archive",
       categories: 'Categories',
@@ -522,8 +568,8 @@ export default function App() {
     };
 
   const garagePosts = useMemo(
-    () => [...GARAGE_POSTS].sort((a, b) => parseGarageDate(b.date) - parseGarageDate(a.date)),
-    []
+    () => [...projects].sort((a, b) => a.sortOrder - b.sortOrder),
+    [projects]
   );
 
   const garageCategories = useMemo(
@@ -579,7 +625,7 @@ export default function App() {
   ];
   const heroFlowers = [
     { src: navyFlower, className: 'hidden md:block left-[31%] top-[34%] w-[clamp(58px,6vw,88px)] rotate-[18deg]' },
-    { src: layeredFlowerA, className: 'hidden md:block left-[35%] top-[57%] w-[clamp(72px,7.3vw,108px)] rotate-[-9deg]' },
+    { src: layeredFlowerA, className: 'hidden md:block left-[35%] top-[57%] w-[clamp(72px,7.3vw,108px)] rotate-[-9deg]', isThemeToggle: true },
     { src: layeredFlowerB, className: 'hidden md:block right-[31%] top-[27%] w-[clamp(52px,5.2vw,76px)] rotate-[8deg]' },
     { src: orangeFlower, className: 'hidden md:block right-[31%] top-[53%] w-[clamp(42px,4vw,58px)] rotate-[-10deg]' },
     { src: layeredFlowerA, className: 'hidden md:block right-[6%] top-[38%] w-[clamp(86px,8.2vw,122px)] rotate-[12deg]', isModeToggle: true },
@@ -587,7 +633,7 @@ export default function App() {
     { src: layeredFlowerA, className: 'md:hidden left-[10%] top-[28%] w-[80px] rotate-[9deg]' },
     { src: navyFlower, className: 'md:hidden left-[15%] top-[35%] w-[60px] rotate-[-10deg]' },
     { src: layeredFlowerB, className: 'md:hidden right-[10%] top-[27%] w-[78px] rotate-[-8deg]', isModeToggle: true },
-    { src: layeredFlowerB, className: 'md:hidden left-[8%] top-[57%] w-[82px] rotate-[-8deg]' },
+    { src: layeredFlowerB, className: 'md:hidden left-[8%] top-[57%] w-[82px] rotate-[-8deg]', isThemeToggle: true },
     { src: layeredFlowerA, className: 'md:hidden right-[11%] top-[58%] w-[78px] rotate-[-7deg]' },
   ];
 
@@ -603,67 +649,175 @@ export default function App() {
   }, [colorMode]);
 
   useEffect(() => {
+    let cancelled = false;
+    projectsApi.list()
+      .then((items) => {
+        if (cancelled) return;
+        setProjects(items);
+        setProjectsError(null);
+      })
+      .catch((error: unknown) => {
+        if (cancelled) return;
+        setProjectsError(error instanceof Error ? error.message : 'Unable to load projects.');
+      })
+      .finally(() => {
+        if (!cancelled) setProjectsLoading(false);
+      });
+    return () => { cancelled = true; };
+  }, []);
+
+  useEffect(() => {
+    const onPopState = () => {
+      const slug = projectSlugFromPath();
+      setRouteProjectSlug(slug);
+      if (slug) {
+        setActivePage('garage');
+        setProjectLoading(true);
+        setProjectError(null);
+      } else {
+        setSelectedProject(null);
+        setProjectError(null);
+      }
+    };
+    window.addEventListener('popstate', onPopState);
+    return () => window.removeEventListener('popstate', onPopState);
+  }, []);
+
+  useEffect(() => {
+    if (!routeProjectSlug) return;
+
+    let cancelled = false;
+    projectsApi.getBySlug(routeProjectSlug)
+      .then((project) => {
+        if (!cancelled) setSelectedProject(project);
+      })
+      .catch((error: unknown) => {
+        if (cancelled) return;
+        setSelectedProject(null);
+        setProjectError(error instanceof CmsApiError && error.status === 404
+          ? 'This project is not published or no longer exists.'
+          : error instanceof Error ? error.message : 'Unable to load this project.');
+      })
+      .finally(() => {
+        if (!cancelled) setProjectLoading(false);
+      });
+
+    return () => { cancelled = true; };
+  }, [routeProjectSlug]);
+
+  useEffect(() => {
+    if (!selectedProject) return;
+
+    setProjectLikes(selectedProject.likesCount);
+    setProjectShares(selectedProject.sharesCount);
+
+    try {
+      const storedData = localStorage.getItem(`garage_post_${selectedProject.id}`);
+      const parsed = storedData ? JSON.parse(storedData) : {};
+      setIsProjectLiked(Boolean(parsed.isLiked));
+    } catch {
+      setIsProjectLiked(false);
+    }
+  }, [selectedProject]);
+
+  useEffect(() => {
     window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
   }, []);
 
   const navigateToPage = (page: 'head' | 'garage' | 'sketchbook' | 'about') => {
     setIsMobileMenuOpen(false);
+    if (routeProjectSlug) {
+      window.history.replaceState({}, '', '/');
+      setRouteProjectSlug(null);
+    }
     setActivePage(page);
     window.requestAnimationFrame(() => {
       window.scrollTo({ top: 0, left: 0, behavior: 'smooth' });
     });
   };
 
-  const openGaragePost = (post: GaragePost) => {
-    const storedData = localStorage.getItem(`garage_post_${post.id}`);
-
-    if (storedData) {
-      const parsed = JSON.parse(storedData);
-      setProjectLikes(parsed.likes || 0);
-      setIsProjectLiked(parsed.isLiked || false);
-    } else {
-      setProjectLikes(getDefaultLikes(post.id));
+  const openGaragePost = (post: ProjectSummary) => {
+    try {
+      const storedData = localStorage.getItem(`garage_post_${post.id}`);
+      const parsed = storedData ? JSON.parse(storedData) : {};
+      setIsProjectLiked(Boolean(parsed.isLiked));
+    } catch {
       setIsProjectLiked(false);
     }
 
-    setSelectedGaragePost(post);
+    setProjectLikes(post.likesCount);
+    setProjectShares(post.sharesCount);
+
+    window.history.pushState({ projectModal: true }, '', `/projects/${encodeURIComponent(post.slug)}`);
+    setSelectedProject(null);
+    setProjectError(null);
+    setProjectLoading(true);
+    setRouteProjectSlug(post.slug);
   };
 
-  const handleLikeProject = () => {
-    if (!selectedGaragePost) return;
+  const closeProject = () => {
+    window.history.replaceState({}, '', '/');
+    setRouteProjectSlug(null);
+    setSelectedProject(null);
+    setProjectError(null);
+  };
+
+  const handleLikeProject = async () => {
+    if (!selectedProject || isProjectLikeUpdating) return;
 
     const newIsLiked = !isProjectLiked;
-    const newLikes = newIsLiked ? projectLikes + 1 : projectLikes - 1;
+    const newLikes = Math.max(0, newIsLiked ? projectLikes + 1 : projectLikes - 1);
 
     setIsProjectLiked(newIsLiked);
     setProjectLikes(newLikes);
+    setIsProjectLikeUpdating(true);
 
-    const storedData = localStorage.getItem(`garage_post_${selectedGaragePost.id}`);
-    const parsed = storedData ? JSON.parse(storedData) : {};
+    try {
+      const engagement = newIsLiked
+        ? await projectsApi.like(selectedProject.slug)
+        : await projectsApi.unlike(selectedProject.slug);
 
-    localStorage.setItem(`garage_post_${selectedGaragePost.id}`, JSON.stringify({
-      ...parsed,
-      likes: newLikes,
-      isLiked: newIsLiked,
-    }));
+      setProjectLikes(engagement.likesCount);
+
+      try {
+        const storedData = localStorage.getItem(`garage_post_${selectedProject.id}`);
+        const parsed = storedData ? JSON.parse(storedData) : {};
+        localStorage.setItem(`garage_post_${selectedProject.id}`, JSON.stringify({ ...parsed, isLiked: newIsLiked }));
+      } catch {
+        // The database count remains correct when this browser blocks storage.
+      }
+    } catch {
+      setIsProjectLiked(!newIsLiked);
+      setProjectLikes(Math.max(0, newIsLiked ? projectLikes : projectLikes + 1));
+    } finally {
+      setIsProjectLikeUpdating(false);
+    }
   };
 
-  const handleGarageShare = async (post: GaragePost) => {
+  const handleGarageShare = async (post: Project) => {
+    if (isProjectShareUpdating) return;
+
     const shareData = {
       title: post.title,
-      text: post.caption,
+      text: post.summary,
       url: window.location.href,
     };
 
+    setIsProjectShareUpdating(true);
     try {
       if (navigator.share) {
         await navigator.share(shareData);
       } else {
-        await navigator.clipboard.writeText(`${post.title} - ${post.caption}\n${window.location.href}`);
+        await navigator.clipboard.writeText(`${post.title} - ${post.summary}\n${window.location.href}`);
         alert('Link copied to clipboard!');
       }
+
+      const engagement = await projectsApi.share(post.slug);
+      setProjectShares(engagement.sharesCount);
     } catch (err) {
       console.error('Error sharing:', err);
+    } finally {
+      setIsProjectShareUpdating(false);
     }
   };
 
@@ -785,7 +939,7 @@ export default function App() {
             <div aria-hidden="true" className="pointer-events-none absolute inset-0 overflow-visible">
               <div
                 data-hero-anchor="backplate"
-                className="absolute left-[var(--hero-anchor-x)] top-[var(--hero-anchor-y)] z-[3] w-[185vw] max-w-none -translate-x-1/2 -translate-y-1/2 md:hidden"
+                className="absolute left-[var(--hero-anchor-x)] top-[var(--hero-anchor-y)] z-[3] w-[148vw] max-w-none -translate-x-1/2 -translate-y-1/2 md:hidden"
               >
                 <img
                   src="/icons/背板1.png"
@@ -842,6 +996,38 @@ export default function App() {
                     draggable={false}
                   />
                 </button>
+              ) : flower.isThemeToggle ? (
+                <button
+                  key={`theme-mode-flower-${index}`}
+                  type="button"
+                  aria-label={text.themeModeLabel}
+                  aria-describedby={`theme-mode-tooltip-${index}`}
+                  aria-pressed={colorMode === 'dark'}
+                  onClick={() => setColorMode((mode) => (mode === 'light' ? 'dark' : 'light'))}
+                  onPointerEnter={() => setIsThemeModeHintVisible(true)}
+                  onPointerLeave={() => setIsThemeModeHintVisible(false)}
+                  onFocus={() => setIsThemeModeHintVisible(true)}
+                  onBlur={() => setIsThemeModeHintVisible(false)}
+                  className={`group pointer-events-auto absolute h-auto cursor-pointer touch-manipulation select-none rounded-full border-0 bg-transparent p-0 outline-none transition-transform duration-300 ease-out hover:-translate-y-2 hover:scale-110 focus-visible:ring-4 focus-visible:ring-light-coral/45 ${flower.className}`}
+                >
+                  <span
+                    id={`theme-mode-tooltip-${index}`}
+                    role="tooltip"
+                    className={`pointer-events-none absolute right-1/2 top-0 z-10 translate-x-1/2 -translate-y-[calc(100%+0.55rem)] whitespace-nowrap border-2 border-light-ink bg-white px-3 py-2 font-mono text-[10px] font-black uppercase leading-none text-light-ink shadow-[5px_5px_0_rgba(43,43,43,0.22)] transition dark:border-white dark:bg-[#111111] dark:text-white md:text-xs ${
+                      isThemeModeHintVisible ? 'opacity-100' : 'opacity-0 group-hover:opacity-100 group-focus-visible:opacity-100'
+                    }`}
+                  >
+                    {colorMode === 'dark' ? text.dark : text.light}
+                    <span className="mx-2 text-light-coral">/</span>
+                    {text.themeModeHint}
+                  </span>
+                  <img
+                    src={flower.src}
+                    alt=""
+                    className="h-auto w-full object-contain transition-transform duration-300 group-hover:rotate-3 group-active:scale-95"
+                    draggable={false}
+                  />
+                </button>
               ) : (
                 <span
                   key={`${flower.src}-${index}`}
@@ -862,7 +1048,7 @@ export default function App() {
               className={`pointer-events-none absolute z-20 h-[72svh] min-h-[620px] w-[158vw] max-w-none -translate-x-1/2 -translate-y-1/2 md:h-[82vh] md:min-h-[620px] md:w-[100vw] md:max-w-[1280px] ${
                 headRenderMode === 'low'
                   ? 'left-[var(--hero-anchor-x)] top-[var(--hero-anchor-y)]'
-                  : 'left-[calc(var(--hero-anchor-x)-60px)] top-[calc(var(--hero-model-y)-60px)] md:left-[calc(var(--hero-anchor-x)-270px)] md:top-[calc(var(--hero-model-y)-190px)]'
+                  : 'left-[calc(var(--hero-anchor-x)-40px)] top-[calc(var(--hero-model-y)-40px)] md:left-[calc(var(--hero-anchor-x)-270px)] md:top-[calc(var(--hero-model-y)-190px)]'
               }`}
             >
               <div className="pointer-events-auto h-full w-full">
@@ -963,6 +1149,24 @@ export default function App() {
             </div>
 
             <div className="grid grid-cols-1 border-l border-t border-light-ink dark:border-white sm:grid-cols-2 lg:grid-cols-3">
+              {projectsLoading && (
+                <div className="col-span-full grid min-h-72 place-items-center border-b border-r border-light-ink bg-white/90 p-10 dark:border-white dark:bg-[#111111]/90">
+                  <div className="flex items-center gap-3 font-mono text-xs font-bold uppercase tracking-widest text-light-ink/60 dark:text-white/60">
+                    <span className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" /> Loading projects
+                  </div>
+                </div>
+              )}
+              {!projectsLoading && projectsError && (
+                <div className="col-span-full border-b border-r border-light-ink bg-white/90 p-10 text-center dark:border-white dark:bg-[#111111]/90">
+                  <p className="font-mono text-xs font-bold uppercase tracking-widest text-light-coral">Projects unavailable</p>
+                  <p className="mx-auto mt-3 max-w-xl text-sm text-light-ink/65 dark:text-white/65">{projectsError}</p>
+                </div>
+              )}
+              {!projectsLoading && !projectsError && filteredGaragePosts.length === 0 && (
+                <div className="col-span-full grid min-h-72 place-items-center border-b border-r border-light-ink bg-white/90 p-10 text-center text-sm text-light-ink/60 dark:border-white dark:bg-[#111111]/90 dark:text-white/60">
+                  No published projects in this category yet.
+                </div>
+              )}
               {SHOW_SKETCHBOOK && (activeGarageCategory === 'All' || activeGarageCategory === 'Sketch') && (
                 <button
                   onClick={() => navigateToPage('sketchbook')}
@@ -1005,7 +1209,7 @@ export default function App() {
                   className="group flex min-h-[560px] flex-col border-b border-r border-light-ink bg-white/90 p-7 text-left backdrop-blur-[1px] transition hover:bg-white dark:border-white dark:bg-[#111111]/90 dark:hover:bg-[#111111] md:min-h-[620px] md:p-9"
                 >
                   <div className="mb-6 flex items-center justify-between gap-4 font-mono text-xs font-medium text-light-ink/70 dark:text-white/70">
-                    <span>{post.date}</span>
+                    <span>{post.projectDate}</span>
                     <span className="rounded-full border border-light-ink px-3 py-1 text-[10px] font-black uppercase text-light-ink dark:border-white dark:text-white">
                       {post.category || 'Project'}
                     </span>
@@ -1013,7 +1217,7 @@ export default function App() {
 
                   <div className="aspect-[1.35] w-full overflow-hidden bg-light-gray">
                     <img
-                      src={post.image}
+                      src={post.coverImageUrl}
                       alt={post.title}
                       className="h-full w-full object-cover object-center transition duration-700 group-hover:scale-[1.04]"
                       loading={index < 3 ? 'eager' : 'lazy'}
@@ -1026,7 +1230,7 @@ export default function App() {
                       {post.title}
                     </h2>
                     <p className="mt-4 line-clamp-3 text-sm font-medium leading-7 text-light-ink/70 dark:text-white/65">
-                      {post.description || post.caption}
+                      {post.summary}
                     </p>
                     <span className="mt-auto pt-8 font-mono text-xs font-black uppercase underline decoration-light-ink underline-offset-4 transition group-hover:text-light-coral group-hover:decoration-light-coral dark:decoration-white">
                       {text.readMore}
@@ -1041,7 +1245,7 @@ export default function App() {
 
       {activePage === 'about' && (
         <section id="about" className="min-h-screen bg-white pt-20 transition-colors dark:bg-[#111111] md:pt-0">
-          <POPage theme={theme} />
+          <POPage theme={theme} projects={projects} />
         </section>
       )}
 
@@ -1050,141 +1254,89 @@ export default function App() {
           <SketchbookSection />
         </div>
       )}
-      {/* Post Modal */}
+      {/* Project route / modal */}
       <AnimatePresence>
-        {selectedGaragePost && (
-          <motion.div 
+        {routeProjectSlug && (
+          <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[200] flex items-center justify-center bg-white dark:bg-[#050505] transition-all duration-300"
-            onClick={() => setSelectedGaragePost(null)}
+            className="fixed inset-0 z-[200] flex items-center justify-center bg-white transition-all duration-300 dark:bg-[#050505]"
+            onClick={closeProject}
           >
-            {/* Sidebar Controls (Behance Style) */}
-            <div className="fixed right-2 md:right-6 top-1/2 -translate-y-1/2 flex flex-col gap-4 md:gap-6 z-[230] items-center scale-75 md:scale-100 origin-right">
-              <button 
-                className="p-3 rounded-full bg-neutral-100 dark:bg-neutral-800 text-neutral-800 dark:text-white hover:text-light-coral transition-all hover:scale-110 shadow-lg"
-                onClick={() => setSelectedGaragePost(null)}
-              >
-                <X className="w-6 h-6" />
+            <div className="fixed right-2 top-1/2 z-[230] flex -translate-y-1/2 origin-right scale-75 flex-col items-center gap-4 md:right-6 md:scale-100 md:gap-6">
+              <button className="rounded-full bg-neutral-100 p-3 text-neutral-800 shadow-lg transition-all hover:scale-110 hover:text-light-coral dark:bg-neutral-800 dark:text-white" onClick={closeProject} aria-label="Close project">
+                <X className="h-6 w-6" />
               </button>
-              <div className="flex flex-col gap-4 bg-neutral-100/80 dark:bg-neutral-800/80 backdrop-blur-md p-4 rounded-full shadow-xl border border-neutral-200 dark:border-neutral-700">
-                <button 
-                  className="p-3 rounded-full hover:bg-white dark:hover:bg-neutral-700 text-neutral-800 dark:text-white hover:text-light-coral transition-all group relative"
-                  onClick={(e) => { e.stopPropagation(); handleGarageShare(selectedGaragePost); }}
-                >
-                  <Share2 className="w-5 h-5" />
-                  <span className="absolute right-full mr-4 px-2 py-1 bg-black text-white text-[10px] rounded opacity-0 group-hover:opacity-100 whitespace-nowrap pointer-events-none">Share</span>
-                </button>
-                <button 
-                  className={`p-3 rounded-full hover:bg-white dark:hover:bg-neutral-700 transition-all group relative ${isProjectLiked ? 'text-light-coral' : 'text-neutral-800 dark:text-white hover:text-light-coral'}`}
-                  onClick={(e) => { e.stopPropagation(); handleLikeProject(); }}
-                >
-                  <Heart className="w-5 h-5" fill={isProjectLiked ? "currentColor" : "none"} />
-                  <span className="absolute right-full mr-4 px-2 py-1 bg-black text-white text-[10px] rounded opacity-0 group-hover:opacity-100 whitespace-nowrap pointer-events-none">
-                    {isProjectLiked ? 'Unlike' : 'Like'} ({projectLikes})
-                  </span>
-                </button>
-              </div>
+              {selectedProject && (
+                <div className="flex flex-col gap-4 rounded-full border border-neutral-200 bg-neutral-100/80 p-4 shadow-xl backdrop-blur-md dark:border-neutral-700 dark:bg-neutral-800/80">
+                  <button
+                    className="group relative rounded-full p-3 text-neutral-800 transition-all hover:bg-white hover:text-light-coral disabled:cursor-wait disabled:opacity-60 dark:text-white dark:hover:bg-neutral-700"
+                    onClick={(event) => { event.stopPropagation(); void handleGarageShare(selectedProject); }}
+                    aria-label={`Share project (${projectShares} shares)`}
+                    aria-busy={isProjectShareUpdating}
+                    disabled={isProjectShareUpdating}
+                  >
+                    <Share2 className="h-5 w-5" />
+                    <span className="pointer-events-none absolute -right-2 -top-2 min-w-5 rounded-full bg-light-coral px-1 py-0.5 text-center font-mono text-[9px] font-black leading-none text-white">{formatEngagementCount(projectShares)}</span>
+                  </button>
+                  <button
+                    className={`group relative rounded-full p-3 transition-all hover:bg-white disabled:cursor-wait disabled:opacity-60 dark:hover:bg-neutral-700 ${isProjectLiked ? 'text-light-coral' : 'text-neutral-800 hover:text-light-coral dark:text-white'}`}
+                    onClick={(event) => { event.stopPropagation(); void handleLikeProject(); }}
+                    aria-label={`${isProjectLiked ? 'Unlike' : 'Like'} project (${projectLikes} likes)`}
+                    aria-busy={isProjectLikeUpdating}
+                    disabled={isProjectLikeUpdating}
+                  >
+                    <Heart className="h-5 w-5" fill={isProjectLiked ? 'currentColor' : 'none'} />
+                    <span className="pointer-events-none absolute -right-2 -top-2 min-w-5 rounded-full bg-light-coral px-1 py-0.5 text-center font-mono text-[9px] font-black leading-none text-white">{formatEngagementCount(projectLikes)}</span>
+                  </button>
+                </div>
+              )}
             </div>
 
-            <motion.div 
+            <motion.div
               initial={{ y: 40, opacity: 0 }}
               animate={{ y: 0, opacity: 1 }}
               exit={{ y: 40, opacity: 0 }}
-              transition={{ type: "spring", damping: 25, stiffness: 200 }}
-              className="w-full h-full flex flex-col gap-0 overflow-y-auto overscroll-none hide-scrollbar relative bg-white dark:bg-[#050505] transition-all duration-300"
-              onClick={(e) => e.stopPropagation()}
+              transition={{ type: 'spring', damping: 25, stiffness: 200 }}
+              className="hide-scrollbar relative h-full w-full overflow-y-auto overscroll-none bg-white transition-all duration-300 dark:bg-[#050505]"
+              onClick={(event) => event.stopPropagation()}
             >
-              {/* Gallery Section - Full Width (Moved to top) */}
-              {selectedGaragePost.gallery && (
-                <div className="w-full flex flex-col gap-0">
-                  {/* Main Gallery Images */}
-                  {selectedGaragePost.gallery.filter((img: string) => !img.includes('/pics/')).map((img: string, idx: number) => (
-                    <LazyImage 
-                      key={idx} 
-                      src={img} 
-                      alt={`${selectedGaragePost.title} image ${idx + 1}`} 
-                      className="w-full h-auto block"
-                      priority={idx < 2}
-                    />
-                  ))}
-                  
-                  {/* Small Pics Grid (3x2 for TINI or general grid) */}
-                  {(selectedGaragePost.smallPics || selectedGaragePost.gallery.filter((img: string) => img.includes('/pics/'))).length > 0 && (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-0">
-                      {(selectedGaragePost.smallPics || selectedGaragePost.gallery.filter((img: string) => img.includes('/pics/'))).map((img: string, idx: number) => (
-                        <LazyImage 
-                          key={`small-${idx}`} 
-                          src={img} 
-                          alt={`${selectedGaragePost.title} detail ${idx + 1}`} 
-                          className="w-full aspect-square object-cover block"
-                        />
-                      ))}
-                    </div>
-                  )}
-
-                  {/* Bottom Gallery Images */}
-                  {selectedGaragePost.galleryBottom && selectedGaragePost.galleryBottom.map((img: string, idx: number) => (
-                    <LazyImage 
-                      key={`bottom-${idx}`} 
-                      src={img} 
-                      alt={`${selectedGaragePost.title} bottom image ${idx + 1}`} 
-                      className="w-full h-auto block"
-                    />
-                  ))}
+              {projectLoading && (
+                <div className="grid min-h-screen place-items-center text-neutral-500 dark:text-neutral-400">
+                  <div className="flex items-center gap-3 font-mono text-xs font-bold uppercase tracking-widest"><span className="h-5 w-5 animate-spin rounded-full border-2 border-current border-t-transparent" /> Loading project</div>
                 </div>
               )}
-              
-              {/* Project Content */}
-              <div className="w-full bg-white dark:bg-[#050505] relative z-30">
-                <div className="max-w-6xl mx-auto p-6 md:p-24">
-                  <div className="prose dark:prose-invert max-w-none mb-12">
-                    <div className="flex flex-col gap-12">
-                      {/* Description Section */}
-                      <div className="grid grid-cols-1 lg:grid-cols-3 gap-12 items-start">
-                        <div className="lg:col-span-2">
-                          <p className="text-xl md:text-2xl text-neutral-700 dark:text-neutral-300 leading-relaxed font-light">
-                            {selectedGaragePost.description}
-                          </p>
-                        </div>
-                        <div className="space-y-8 p-8 bg-neutral-50 dark:bg-neutral-900/50 rounded-3xl border border-neutral-100 dark:border-neutral-800">
-                          <div>
-                            <h4 className="text-xs font-bold uppercase tracking-[0.2em] text-neutral-400 dark:text-neutral-500 mb-4">Project Info</h4>
-                            <div className="space-y-4">
-                              <div>
-                                <span className="text-[10px] uppercase tracking-widest text-neutral-400">Date</span>
-                                <p className="text-sm font-bold">
-                                  {selectedGaragePost.date} {selectedGaragePost.location && `| ${selectedGaragePost.location}`}
-                                </p>
-                              </div>
-                              <div>
-                                <span className="text-[10px] uppercase tracking-widest text-neutral-400">Category</span>
-                                <p className="text-sm font-bold">{selectedGaragePost.category}</p>
-                              </div>
-                              <div>
-                                <span className="text-[10px] uppercase tracking-widest text-neutral-400">Author</span>
-                                <p className="text-sm font-bold">{selectedGaragePost.author}</p>
-                              </div>
-                            </div>
-                          </div>
-                          <div>
-                            <h4 className="text-xs font-bold uppercase tracking-[0.2em] text-neutral-400 dark:text-neutral-500 mb-4">Tools</h4>
-                            <div className="flex flex-wrap gap-2">
-                              {selectedGaragePost.tools?.map((tool: string) => (
-                                <span key={tool} className="px-3 py-1 bg-white dark:bg-neutral-800 text-neutral-600 dark:text-neutral-300 text-[10px] font-bold rounded-full border border-neutral-200 dark:border-neutral-700 uppercase tracking-widest">
-                                  {tool}
-                                </span>
-                              ))}
-                            </div>
+              {!projectLoading && projectError && (
+                <div className="grid min-h-screen place-items-center px-6 text-center">
+                  <div><p className="font-mono text-xs font-bold uppercase tracking-widest text-light-coral">Project unavailable</p><p className="mt-4 text-neutral-600 dark:text-neutral-400">{projectError}</p><button className="mt-6 rounded-full border border-current px-5 py-2 text-sm font-semibold" onClick={closeProject}>Back to portfolio</button></div>
+                </div>
+              )}
+              {!projectLoading && selectedProject && (
+                <>
+                  <ProjectRenderer project={selectedProject} />
+                  <div className="relative z-30 w-full bg-white dark:bg-[#050505]">
+                    <div className="mx-auto grid max-w-6xl gap-12 p-6 md:p-24 lg:grid-cols-3">
+                      <div className="lg:col-span-2">
+                        <p className="font-mono text-xs font-bold uppercase tracking-[0.2em] text-light-coral">{selectedProject.category}</p>
+                        <h1 className="mt-4 text-4xl font-semibold leading-tight text-neutral-900 dark:text-white md:text-6xl">{selectedProject.title}</h1>
+                        <p className="mt-6 text-xl font-light leading-relaxed text-neutral-700 dark:text-neutral-300 md:text-2xl">{selectedProject.summary}</p>
+                      </div>
+                      <div className="space-y-8 rounded-3xl border border-neutral-100 bg-neutral-50 p-8 dark:border-neutral-800 dark:bg-neutral-900/50">
+                        <div>
+                          <h4 className="mb-4 text-xs font-bold uppercase tracking-[0.2em] text-neutral-400 dark:text-neutral-500">Project Info</h4>
+                          <div className="space-y-4">
+                            <div><span className="text-[10px] uppercase tracking-widest text-neutral-400">Date</span><p className="text-sm font-bold">{selectedProject.projectDate} {selectedProject.location && `| ${selectedProject.location}`}</p></div>
+                            <div><span className="text-[10px] uppercase tracking-widest text-neutral-400">Category</span><p className="text-sm font-bold">{selectedProject.category}</p></div>
+                            <div><span className="text-[10px] uppercase tracking-widest text-neutral-400">Author</span><p className="text-sm font-bold">{selectedProject.author}</p></div>
                           </div>
                         </div>
+                        {selectedProject.tools.length > 0 && <div><h4 className="mb-4 text-xs font-bold uppercase tracking-[0.2em] text-neutral-400 dark:text-neutral-500">Tools</h4><div className="flex flex-wrap gap-2">{selectedProject.tools.map((tool) => <span key={tool} className="rounded-full border border-neutral-200 bg-white px-3 py-1 text-[10px] font-bold uppercase tracking-widest text-neutral-600 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-300">{tool}</span>)}</div></div>}
                       </div>
                     </div>
                   </div>
-                </div>
-
-              </div>
+                </>
+              )}
             </motion.div>
           </motion.div>
         )}

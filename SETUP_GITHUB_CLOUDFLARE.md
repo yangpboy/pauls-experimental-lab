@@ -57,5 +57,5 @@ npm run deploy
 
 ## 四、備註
 
-- SPA 路由依賴 **`public/_redirects`**（已包含在此專案中）。
+- SPA 路由使用 Cloudflare Pages 的內建 fallback（專案不放置頂層 `404.html`），可直接開啟 `/admin` 與 `/projects/:slug`。
 - 建置成功後請將 **`package-lock.json`** 一併 commit，方便重現依賴版本。

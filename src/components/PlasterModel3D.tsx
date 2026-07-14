@@ -186,7 +186,7 @@ export default function PlasterModel3D({
           />
         </div>
       )}
-      <div className="relative flex h-full w-full items-center justify-center scale-[1.12] transition-transform duration-700 md:scale-[1.28] lg:scale-[1.34]">
+      <div className="relative flex h-full w-full items-center justify-center scale-[1.2] transition-transform duration-700 md:scale-[1.28] lg:scale-[1.34]">
         <WebGLErrorBoundary
           fallback={
             <div className="flex max-w-md flex-col items-center justify-center rounded-2xl border border-neutral-200 bg-neutral-100 p-8 text-center dark:border-neutral-800 dark:bg-neutral-900">
