@@ -10,7 +10,7 @@ pages_build_output_dir = "dist"
 [[d1_databases]]
 binding = "DB"
 database_name = "pauls-portfolio-cms"
-database_id = "REPLACE_WITH_D1_DATABASE_ID"
+database_id = "42782945-2397-4db8-b4cf-7a2216775de7"
 
 # Optional R2 upload provider. Uncomment after creating the bucket.
 # [[r2_buckets]]
