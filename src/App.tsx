@@ -8,6 +8,7 @@ import { lazy, Suspense, useRef, useEffect, useState, useMemo } from 'react';
 import { X, Share2, ArrowUpRight, Heart, ChevronLeft, ChevronRight, BookOpen, ArrowDown, Menu } from 'lucide-react';
 import ProjectRenderer from './components/ProjectRenderer';
 import AdminApp from './admin/AdminApp';
+import AdminLogin from './admin/AdminLogin';
 import { CmsApiError, projectsApi } from './lib/api';
 import type { Project, ProjectSummary } from './types/cms';
 
@@ -485,7 +486,10 @@ const SketchbookSection = () => {
 };
 
 export default function App() {
-  return window.location.pathname.startsWith('/admin') ? <AdminApp /> : <PortfolioApp />;
+  const path = window.location.pathname.replace(/\/+$/, '') || '/';
+  if (path.startsWith('/admin')) return <AdminApp />;
+  if (path === '/login') return <AdminLogin />;
+  return <PortfolioApp />;
 }
 
 function PortfolioApp() {
@@ -627,14 +631,14 @@ function PortfolioApp() {
     { src: navyFlower, className: 'hidden md:block left-[31%] top-[34%] w-[clamp(58px,6vw,88px)] rotate-[18deg]' },
     { src: layeredFlowerA, className: 'hidden md:block left-[35%] top-[57%] w-[clamp(72px,7.3vw,108px)] rotate-[-9deg]', isThemeToggle: true },
     { src: layeredFlowerB, className: 'hidden md:block right-[31%] top-[27%] w-[clamp(52px,5.2vw,76px)] rotate-[8deg]' },
-    { src: orangeFlower, className: 'hidden md:block right-[31%] top-[53%] w-[clamp(42px,4vw,58px)] rotate-[-10deg]' },
+    { src: orangeFlower, className: 'hidden md:block right-[31%] top-[53%] w-[clamp(42px,4vw,58px)] rotate-[-10deg]', isAdminEntry: true },
     { src: layeredFlowerA, className: 'hidden md:block right-[6%] top-[38%] w-[clamp(86px,8.2vw,122px)] rotate-[12deg]', isModeToggle: true },
 
     { src: layeredFlowerA, className: 'md:hidden left-[10%] top-[28%] w-[80px] rotate-[9deg]' },
     { src: navyFlower, className: 'md:hidden left-[15%] top-[35%] w-[60px] rotate-[-10deg]' },
     { src: layeredFlowerB, className: 'md:hidden right-[10%] top-[27%] w-[78px] rotate-[-8deg]', isModeToggle: true },
     { src: layeredFlowerB, className: 'md:hidden left-[8%] top-[57%] w-[82px] rotate-[-8deg]', isThemeToggle: true },
-    { src: layeredFlowerA, className: 'md:hidden right-[11%] top-[58%] w-[78px] rotate-[-7deg]' },
+    { src: orangeFlower, className: 'md:hidden right-[11%] top-[58%] w-[58px] rotate-[-7deg]', isAdminEntry: true },
   ];
 
   useEffect(() => {
@@ -1028,6 +1032,26 @@ function PortfolioApp() {
                     draggable={false}
                   />
                 </button>
+              ) : flower.isAdminEntry ? (
+                <a
+                  key={`admin-entry-flower-${index}`}
+                  href="/login"
+                  aria-label="Open private portfolio editor sign in"
+                  className={`group pointer-events-auto absolute h-auto cursor-pointer touch-manipulation select-none rounded-full outline-none transition-transform duration-300 ease-out hover:-translate-y-2 hover:scale-110 focus-visible:ring-4 focus-visible:ring-light-coral/45 ${flower.className}`}
+                >
+                  <span
+                    role="tooltip"
+                    className="pointer-events-none absolute right-1/2 top-0 z-10 translate-x-1/2 -translate-y-[calc(100%+0.55rem)] whitespace-nowrap border-2 border-light-ink bg-white px-3 py-2 font-mono text-[10px] font-black uppercase leading-none text-light-ink opacity-0 shadow-[5px_5px_0_rgba(43,43,43,0.22)] transition group-hover:opacity-100 group-focus-visible:opacity-100 dark:border-white dark:bg-[#111111] dark:text-white md:text-xs"
+                  >
+                    Private editor
+                  </span>
+                  <img
+                    src={flower.src}
+                    alt=""
+                    className="h-auto w-full object-contain transition-transform duration-300 group-hover:rotate-6 group-active:scale-95"
+                    draggable={false}
+                  />
+                </a>
               ) : (
                 <span
                   key={`${flower.src}-${index}`}
