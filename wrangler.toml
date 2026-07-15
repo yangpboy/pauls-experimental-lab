@@ -18,4 +18,6 @@ bucket_name = "pauls-portfolio-media"
 
 [vars]
 ASSET_PROVIDER = "r2"
-# Configure R2_PUBLIC_BASE_URL and ADMIN_ALLOWED_EMAILS in the Pages Dashboard.
+# Public delivery host only; no credentials are exposed to the browser.
+R2_PUBLIC_BASE_URL = "https://media.paul-lab.com"
+# Configure ADMIN_ALLOWED_EMAILS after Cloudflare Access protects /admin.
