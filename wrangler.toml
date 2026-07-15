@@ -10,11 +10,11 @@ binding = "DB"
 database_name = "pauls-portfolio-cms"
 database_id = "42782945-2397-4db8-b4cf-7a2216775de7"
 
-# Optional R2 upload provider. Uncomment after creating the bucket and its
-# public custom domain (or r2.dev development URL).
-# [[r2_buckets]]
-# binding = "MEDIA_BUCKET"
-# bucket_name = "pauls-portfolio-media"
+# R2 upload provider. The public delivery URL remains a Pages environment
+# variable so the custom media domain can be changed without source edits.
+[[r2_buckets]]
+binding = "MEDIA_BUCKET"
+bucket_name = "pauls-portfolio-media"
 
 [vars]
 ASSET_PROVIDER = "r2"
