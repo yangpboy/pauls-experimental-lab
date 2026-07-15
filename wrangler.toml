@@ -20,4 +20,6 @@ bucket_name = "pauls-portfolio-media"
 ASSET_PROVIDER = "r2"
 # Public delivery host only; no credentials are exposed to the browser.
 R2_PUBLIC_BASE_URL = "https://media.paul-lab.com"
-# Configure ADMIN_ALLOWED_EMAILS after Cloudflare Access protects /admin.
+# Defence in depth: the API independently checks the email injected by
+# Cloudflare Access. This is not a browser-exposed secret.
+ADMIN_ALLOWED_EMAILS = "yangpboy@gmail.com"
