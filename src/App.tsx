@@ -10,6 +10,7 @@ import ProjectRenderer from './components/ProjectRenderer';
 import AdminApp from './admin/AdminApp';
 import AdminLogin from './admin/AdminLogin';
 import { CmsApiError, projectsApi } from './lib/api';
+import { applyHomeSeo, applyProjectSeo } from './lib/seo';
 import type { Project, ProjectSummary } from './types/cms';
 
 const PlasterModel3D = lazy(() => import('./components/PlasterModel3D'));
@@ -34,6 +35,19 @@ const projectSlugFromPath = () => {
   const match = window.location.pathname.match(/^\/projects\/([^/]+)\/?$/);
   return match ? decodeURIComponent(match[1]) : null;
 };
+
+type PortfolioPage = 'head' | 'garage' | 'sketchbook' | 'about';
+
+const portfolioPageFromLocation = (): PortfolioPage => {
+  if (projectSlugFromPath()) return 'garage';
+
+  const hashPage = window.location.hash.slice(1);
+  return hashPage === 'garage' || hashPage === 'sketchbook' || hashPage === 'about'
+    ? hashPage
+    : 'head';
+};
+
+const portfolioPageHref = (page: PortfolioPage) => page === 'head' ? '/' : `/#${page}`;
 
 const SKETCHBOOK_PAGES = [
   {
@@ -493,7 +507,7 @@ export default function App() {
 }
 
 function PortfolioApp() {
-  const [activePage, setActivePage] = useState<'head' | 'garage' | 'sketchbook' | 'about'>(() => projectSlugFromPath() ? 'garage' : 'head');
+  const [activePage, setActivePage] = useState<PortfolioPage>(() => portfolioPageFromLocation());
   const [activeGarageCategory, setActiveGarageCategory] = useState('All');
   const [headRenderMode, setHeadRenderMode] = useState<'normal' | 'low'>('normal');
   const [colorMode, setColorMode] = useState<'light' | 'dark'>(() => {
@@ -679,6 +693,7 @@ function PortfolioApp() {
         setProjectLoading(true);
         setProjectError(null);
       } else {
+        setActivePage(portfolioPageFromLocation());
         setSelectedProject(null);
         setProjectError(null);
       }
@@ -725,14 +740,24 @@ function PortfolioApp() {
   }, [selectedProject]);
 
   useEffect(() => {
+    if (routeProjectSlug && selectedProject) {
+      applyProjectSeo(selectedProject);
+    } else if (!routeProjectSlug) {
+      applyHomeSeo();
+    }
+  }, [routeProjectSlug, selectedProject]);
+
+  useEffect(() => {
     window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
   }, []);
 
-  const navigateToPage = (page: 'head' | 'garage' | 'sketchbook' | 'about') => {
+  const navigateToPage = (page: PortfolioPage) => {
     setIsMobileMenuOpen(false);
     if (routeProjectSlug) {
-      window.history.replaceState({}, '', '/');
+      window.history.replaceState({}, '', portfolioPageHref(page));
       setRouteProjectSlug(null);
+    } else if (`${window.location.pathname}${window.location.hash}` !== portfolioPageHref(page)) {
+      window.history.pushState({}, '', portfolioPageHref(page));
     }
     setActivePage(page);
     window.requestAnimationFrame(() => {
@@ -828,20 +853,22 @@ function PortfolioApp() {
   return (
     <div className="min-h-screen overflow-x-hidden bg-light-gray text-light-ink font-sans selection:bg-light-teal/40 dark:bg-[#111111] dark:text-white">
       <nav className="pointer-events-none fixed left-0 right-0 top-0 z-[120] flex items-center justify-between gap-4 px-5 py-3 md:px-[5vw] md:py-5">
-        <button
-          onClick={() => navigateToPage('head')}
+        <a
+          href="/"
+          onClick={(event) => { event.preventDefault(); navigateToPage('head'); }}
           className="pointer-events-auto max-w-[58vw] bg-white px-2 py-1 text-left font-mono text-[11px] font-normal uppercase leading-none tracking-normal transition hover:-translate-y-0.5 hover:text-light-coral dark:bg-[#111111] dark:text-white sm:max-w-none sm:text-base md:whitespace-nowrap md:text-[28px]"
           aria-label="Paul's Experimental Lab"
         >
           Paul's Experimental Lab
-        </button>
+        </a>
 
         <div className="pointer-events-auto hidden shrink-0 items-center gap-5 md:flex">
           <div className="flex items-center gap-7 font-mono text-[28px] font-normal uppercase leading-none tracking-normal">
             {navItems.map((item) => (
-              <button
+              <a
                 key={item.page}
-                onClick={() => navigateToPage(item.page)}
+                href={portfolioPageHref(item.page)}
+                onClick={(event) => { event.preventDefault(); navigateToPage(item.page); }}
                 className={`bg-white px-2 py-1 decoration-2 underline-offset-8 transition hover:-translate-y-0.5 hover:text-light-coral dark:bg-[#111111] ${
                   activePage === item.page
                     ? 'text-light-coral underline decoration-light-coral dark:text-light-coral'
@@ -849,7 +876,7 @@ function PortfolioApp() {
                 }`}
               >
                 {item.label}
-              </button>
+              </a>
             ))}
             <button
               type="button"
@@ -885,9 +912,10 @@ function PortfolioApp() {
         >
           <div className="flex flex-col gap-3 font-mono text-3xl uppercase leading-none">
             {navItems.map((item) => (
-              <button
+              <a
                 key={item.page}
-                onClick={() => navigateToPage(item.page)}
+                href={portfolioPageHref(item.page)}
+                onClick={(event) => { event.preventDefault(); navigateToPage(item.page); }}
                 className={`text-left decoration-2 underline-offset-8 transition hover:text-light-coral ${
                   activePage === item.page
                     ? 'text-light-coral underline decoration-light-coral'
@@ -895,7 +923,7 @@ function PortfolioApp() {
                 }`}
               >
                 {item.label}
-              </button>
+              </a>
             ))}
           </div>
           <div className="mt-5 flex items-center justify-between border-t-2 border-light-ink pt-4 font-mono text-sm font-black uppercase dark:border-white">
@@ -1119,13 +1147,14 @@ function PortfolioApp() {
                 <div className="pointer-events-none absolute left-1/2 top-0 z-10 -translate-x-1/2 -translate-y-[calc(100%+0.75rem)] whitespace-nowrap rounded-full border-2 border-light-ink bg-white px-6 py-2 font-mono text-lg font-black uppercase text-light-ink opacity-0 shadow-[8px_8px_0_rgba(43,43,43,0.22)] transition group-hover:opacity-100 dark:border-white dark:bg-[#111111] dark:text-white">
                   {text.linkGarage}
                 </div>
-                <button
-                  onClick={() => navigateToPage('garage')}
+                <a
+                  href="/#garage"
+                  onClick={(event) => { event.preventDefault(); navigateToPage('garage'); }}
                   aria-label="Go to Garage"
                   className="grid h-12 w-12 place-items-center border-2 border-light-ink bg-white text-light-ink shadow-[5px_5px_0_rgba(43,43,43,0.22)] transition hover:-translate-y-1 hover:text-light-coral dark:border-white dark:bg-[#111111] dark:text-white md:h-14 md:w-14"
                 >
                   <ArrowDown className="h-6 w-6" />
-                </button>
+                </a>
               </div>
             </div>
           </section>
@@ -1227,9 +1256,10 @@ function PortfolioApp() {
                 </button>
               )}
               {filteredGaragePosts.map((post, index) => (
-                <button
+                <a
                   key={post.id}
-                  onClick={() => openGaragePost(post)}
+                  href={`/projects/${encodeURIComponent(post.slug)}`}
+                  onClick={(event) => { event.preventDefault(); openGaragePost(post); }}
                   className="group flex min-h-[560px] flex-col border-b border-r border-light-ink bg-white/90 p-7 text-left backdrop-blur-[1px] transition hover:bg-white dark:border-white dark:bg-[#111111]/90 dark:hover:bg-[#111111] md:min-h-[620px] md:p-9"
                 >
                   <div className="mb-6 flex items-center justify-between gap-4 font-mono text-xs font-medium text-light-ink/70 dark:text-white/70">
@@ -1260,7 +1290,7 @@ function PortfolioApp() {
                       {text.readMore}
                     </span>
                   </div>
-                </button>
+                </a>
               ))}
             </div>
           </div>

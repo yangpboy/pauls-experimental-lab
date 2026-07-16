@@ -1,8 +1,10 @@
 import { useEffect } from 'react';
 import { ArrowLeft, ArrowRight, LockKeyhole } from 'lucide-react';
+import { applyLoginSeo } from '../lib/seo';
 
 export default function AdminLogin() {
   useEffect(() => {
+    applyLoginSeo();
     let mode: 'light' | 'dark' = 'light';
     try {
       const savedMode = window.localStorage.getItem('color-mode');
