@@ -5,7 +5,7 @@
 
 import { motion, AnimatePresence } from 'framer-motion';
 import { lazy, Suspense, useRef, useEffect, useState, useMemo } from 'react';
-import { X, Share2, ArrowUpRight, Heart, ChevronLeft, ChevronRight, BookOpen, ArrowDown, Menu } from 'lucide-react';
+import { X, Share2, ArrowUpRight, Heart, ChevronLeft, ChevronRight, BookOpen, ArrowDown, Menu, Settings, LockKeyhole } from 'lucide-react';
 import ProjectRenderer from './components/ProjectRenderer';
 import AdminApp from './admin/AdminApp';
 import AdminLogin from './admin/AdminLogin';
@@ -524,6 +524,7 @@ function PortfolioApp() {
   });
   const [language, setLanguage] = useState<'zh' | 'en'>('en');
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [projects, setProjects] = useState<ProjectSummary[]>([]);
   const [projectsLoading, setProjectsLoading] = useState(true);
   const [projectsError, setProjectsError] = useState<string | null>(null);
@@ -554,6 +555,9 @@ function PortfolioApp() {
       headModeHint: '點擊切換',
       themeModeLabel: '切換亮暗模式',
       themeModeHint: '點擊切換',
+      settings: '設定',
+      openSettings: '開啟設定',
+      privateEditor: '私人編輯器',
       loadingHead: '載入頭像',
       garageSubtitle: 'Paul 的實驗檔案',
       categories: '分類',
@@ -575,6 +579,9 @@ function PortfolioApp() {
       headModeHint: 'Click to switch',
       themeModeLabel: 'Toggle color mode',
       themeModeHint: 'Click to switch',
+      settings: 'Settings',
+      openSettings: 'Open settings',
+      privateEditor: 'Private editor',
       loadingHead: 'Loading head',
       garageSubtitle: "Paul's experimental archive",
       categories: 'Categories',
@@ -645,14 +652,14 @@ function PortfolioApp() {
     { src: navyFlower, className: 'hidden md:block left-[31%] top-[34%] w-[clamp(58px,6vw,88px)] rotate-[18deg]' },
     { src: layeredFlowerA, className: 'hidden md:block left-[35%] top-[57%] w-[clamp(72px,7.3vw,108px)] rotate-[-9deg]', isThemeToggle: true },
     { src: layeredFlowerB, className: 'hidden md:block right-[31%] top-[27%] w-[clamp(52px,5.2vw,76px)] rotate-[8deg]' },
-    { src: orangeFlower, className: 'hidden md:block right-[31%] top-[53%] w-[clamp(42px,4vw,58px)] rotate-[-10deg]', isAdminEntry: true },
+    { src: orangeFlower, className: 'hidden md:block right-[31%] top-[53%] w-[clamp(42px,4vw,58px)] rotate-[-10deg]' },
     { src: layeredFlowerA, className: 'hidden md:block right-[6%] top-[38%] w-[clamp(86px,8.2vw,122px)] rotate-[12deg]', isModeToggle: true },
 
     { src: layeredFlowerA, className: 'md:hidden left-[10%] top-[28%] w-[80px] rotate-[9deg]' },
     { src: navyFlower, className: 'md:hidden left-[15%] top-[35%] w-[60px] rotate-[-10deg]' },
     { src: layeredFlowerB, className: 'md:hidden right-[10%] top-[27%] w-[78px] rotate-[-8deg]', isModeToggle: true },
     { src: layeredFlowerB, className: 'md:hidden left-[8%] top-[57%] w-[82px] rotate-[-8deg]', isThemeToggle: true },
-    { src: orangeFlower, className: 'md:hidden right-[11%] top-[58%] w-[58px] rotate-[-7deg]', isAdminEntry: true },
+    { src: orangeFlower, className: 'md:hidden right-[11%] top-[58%] w-[58px] rotate-[-7deg]' },
   ];
 
   useEffect(() => {
@@ -862,7 +869,7 @@ function PortfolioApp() {
           Paul's Experimental Lab
         </a>
 
-        <div className="pointer-events-auto hidden shrink-0 items-center gap-5 md:flex">
+        <div className="pointer-events-auto relative hidden shrink-0 items-center gap-5 md:flex">
           <div className="flex items-center gap-7 font-mono text-[28px] font-normal uppercase leading-none tracking-normal">
             {navItems.map((item) => (
               <a
@@ -880,17 +887,40 @@ function PortfolioApp() {
             ))}
             <button
               type="button"
-              onClick={() => setColorMode((mode) => (mode === 'light' ? 'dark' : 'light'))}
-              className="grid h-10 w-10 place-items-center transition hover:-translate-y-0.5"
-              aria-label={colorMode === 'light' ? 'Switch to dark mode' : 'Switch to light mode'}
+              onClick={() => setIsSettingsOpen((open) => !open)}
+              className={`grid h-11 w-11 place-items-center border-2 bg-white transition hover:-translate-y-0.5 hover:text-light-coral dark:bg-[#111111] ${isSettingsOpen ? 'border-light-coral text-light-coral' : 'border-light-ink text-light-ink dark:border-white dark:text-white'}`}
+              aria-label={text.openSettings}
+              aria-expanded={isSettingsOpen}
             >
-              <img
-                src={themeToggleIcon}
-                alt=""
-                className="h-7 w-7 object-contain"
-              />
+              <Settings className="h-6 w-6" strokeWidth={2.4} />
             </button>
           </div>
+
+          {isSettingsOpen && <div className="absolute right-0 top-[calc(100%+0.75rem)] w-72 border-2 border-light-ink bg-white p-4 font-mono text-light-ink shadow-[8px_8px_0_rgba(43,43,43,0.22)] dark:border-white dark:bg-[#111111] dark:text-white">
+            <div className="flex items-center justify-between border-b-2 border-light-ink pb-3 dark:border-white">
+              <span className="text-sm font-black uppercase">{text.settings}</span>
+              <button type="button" className="grid h-8 w-8 place-items-center transition hover:text-light-coral" onClick={() => setIsSettingsOpen(false)} aria-label="Close settings"><X size={18} /></button>
+            </div>
+            <div className="flex items-center justify-between py-4 text-xs font-black uppercase">
+              <span>{language === 'en' ? 'Mode' : '模式'}</span>
+              <button
+                type="button"
+                onClick={() => setColorMode((mode) => (mode === 'light' ? 'dark' : 'light'))}
+                className="grid h-10 w-10 place-items-center transition hover:-translate-y-0.5"
+                aria-label={colorMode === 'light' ? 'Switch to dark mode' : 'Switch to light mode'}
+              >
+                <img src={themeToggleIcon} alt="" className="h-7 w-7 object-contain" />
+              </button>
+            </div>
+            <div className="flex items-center justify-between border-t border-light-ink/20 py-4 text-xs font-black uppercase dark:border-white/20">
+              <span>{language === 'en' ? 'Language' : '語言'}</span>
+              <button type="button" onClick={() => setLanguage((mode) => (mode === 'en' ? 'zh' : 'en'))} className="border-2 border-light-ink px-3 py-2 transition hover:text-light-coral dark:border-white">{language === 'en' ? '中' : 'EN'}</button>
+            </div>
+            <a href="/login" onClick={() => setIsSettingsOpen(false)} className="flex items-center justify-between border-t-2 border-light-ink pt-4 text-xs font-black uppercase transition hover:text-light-coral dark:border-white">
+              <span className="flex items-center gap-2"><LockKeyhole size={15} /> {text.privateEditor}</span>
+              <ChevronRight size={16} />
+            </a>
+          </div>}
         </div>
 
         <div className="pointer-events-auto flex items-center gap-2 md:hidden">
@@ -927,6 +957,10 @@ function PortfolioApp() {
             ))}
           </div>
           <div className="mt-5 flex items-center justify-between border-t-2 border-light-ink pt-4 font-mono text-sm font-black uppercase dark:border-white">
+            <span>{text.settings}</span>
+            <Settings size={18} />
+          </div>
+          <div className="mt-4 flex items-center justify-between font-mono text-sm font-black uppercase">
             <span>{language === 'en' ? 'Mode' : '模式'}</span>
             <button
               type="button"
@@ -951,6 +985,10 @@ function PortfolioApp() {
               {language === 'en' ? '中' : 'EN'}
             </button>
           </div>
+          <a href="/login" className="mt-4 flex items-center justify-between border-t border-light-ink/20 pt-4 font-mono text-sm font-black uppercase transition hover:text-light-coral dark:border-white/20" onClick={() => setIsMobileMenuOpen(false)}>
+            <span className="flex items-center gap-2"><LockKeyhole size={16} /> {text.privateEditor}</span>
+            <ChevronRight size={18} />
+          </a>
         </div>
       </nav>
 
@@ -1060,26 +1098,6 @@ function PortfolioApp() {
                     draggable={false}
                   />
                 </button>
-              ) : flower.isAdminEntry ? (
-                <a
-                  key={`admin-entry-flower-${index}`}
-                  href="/login"
-                  aria-label="Open private portfolio editor sign in"
-                  className={`group pointer-events-auto absolute h-auto cursor-pointer touch-manipulation select-none rounded-full outline-none transition-transform duration-300 ease-out hover:-translate-y-2 hover:scale-110 focus-visible:ring-4 focus-visible:ring-light-coral/45 ${flower.className}`}
-                >
-                  <span
-                    role="tooltip"
-                    className="pointer-events-none absolute right-1/2 top-0 z-10 translate-x-1/2 -translate-y-[calc(100%+0.55rem)] whitespace-nowrap border-2 border-light-ink bg-white px-3 py-2 font-mono text-[10px] font-black uppercase leading-none text-light-ink opacity-0 shadow-[5px_5px_0_rgba(43,43,43,0.22)] transition group-hover:opacity-100 group-focus-visible:opacity-100 dark:border-white dark:bg-[#111111] dark:text-white md:text-xs"
-                  >
-                    Private editor
-                  </span>
-                  <img
-                    src={flower.src}
-                    alt=""
-                    className="h-auto w-full object-contain transition-transform duration-300 group-hover:rotate-6 group-active:scale-95"
-                    draggable={false}
-                  />
-                </a>
               ) : (
                 <span
                   key={`${flower.src}-${index}`}
