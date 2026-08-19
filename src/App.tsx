@@ -5,8 +5,9 @@
 
 import { motion, AnimatePresence } from 'framer-motion';
 import { lazy, Suspense, useRef, useEffect, useState, useMemo } from 'react';
-import { X, Share2, ArrowUpRight, Heart, ChevronLeft, ChevronRight, BookOpen, ArrowDown, Menu, Settings, LockKeyhole } from 'lucide-react';
+import { X, Share2, ArrowUpRight, Heart, ChevronLeft, ChevronRight, BookOpen, ArrowDown, Menu, Settings, LockKeyhole, LayoutGrid, Layers3 } from 'lucide-react';
 import ProjectRenderer from './components/ProjectRenderer';
+import GarageDeck from './components/GarageDeck';
 import AdminApp from './admin/AdminApp';
 import AdminLogin from './admin/AdminLogin';
 import { CmsApiError, projectsApi } from './lib/api';
@@ -509,6 +510,7 @@ export default function App() {
 function PortfolioApp() {
   const [activePage, setActivePage] = useState<PortfolioPage>(() => portfolioPageFromLocation());
   const [activeGarageCategory, setActiveGarageCategory] = useState('All');
+  const [garageView, setGarageView] = useState<'deck' | 'grid'>('deck');
   const [headRenderMode, setHeadRenderMode] = useState<'normal' | 'low'>('normal');
   const [colorMode, setColorMode] = useState<'light' | 'dark'>(() => {
     if (typeof window === 'undefined') return 'light';
@@ -566,6 +568,8 @@ function PortfolioApp() {
       sketchDescription: '草圖、形式研究與正在發展中的概念練習。',
       readMore: 'Read More',
       linkGarage: 'Link to Garage',
+      deckView: '卡片版',
+      gridView: '排列板',
     }
     : {
       head: 'Head',
@@ -590,6 +594,8 @@ function PortfolioApp() {
       sketchDescription: 'Sketches, form studies, and developing concept exercises.',
       readMore: 'Read More',
       linkGarage: 'Link to Garage',
+      deckView: 'Card Deck',
+      gridView: 'Board',
     };
 
   const garagePosts = useMemo(
@@ -1180,26 +1186,64 @@ function PortfolioApp() {
       )}
 
       {activePage === 'garage' && (
-        <section id="garage" className="relative min-h-screen overflow-hidden bg-white px-5 pb-24 pt-28 dark:bg-[#111111] md:px-12 md:pt-36">
-          <div
-            aria-hidden="true"
-            className="pointer-events-none absolute inset-0 bg-cover bg-center bg-no-repeat opacity-40 grayscale mix-blend-multiply dark:opacity-20 dark:mix-blend-screen"
-            style={{ backgroundImage: "url('/garage-bg.jpg')" }}
-          />
-          <div className="pointer-events-none absolute inset-0 bg-white/72 dark:bg-[#111111]/82" aria-hidden="true" />
+        <section
+          id="garage"
+          className={`relative min-h-screen overflow-hidden px-5 pb-24 pt-28 md:px-12 md:pt-36 ${
+            garageView === 'deck' ? 'bg-black text-white' : 'bg-white dark:bg-[#111111]'
+          }`}
+        >
+          {garageView === 'grid' && (
+            <>
+              <div
+                aria-hidden="true"
+                className="pointer-events-none absolute inset-0 bg-cover bg-center bg-no-repeat opacity-40 grayscale mix-blend-multiply dark:opacity-20 dark:mix-blend-screen"
+                style={{ backgroundImage: "url('/garage-bg.jpg')" }}
+              />
+              <div className="pointer-events-none absolute inset-0 bg-white/72 dark:bg-[#111111]/82" aria-hidden="true" />
+            </>
+          )}
 
           <div className="relative z-10 mx-auto max-w-[1480px]">
-            <header className="pb-10 pt-2 text-center md:pb-16">
-              <h1 className="font-sans text-[18vw] font-normal uppercase leading-[0.82] tracking-normal text-light-ink dark:text-white sm:text-[16vw] md:text-[12vw] lg:text-[9rem]">
-                {text.garage}
-              </h1>
-              <p className="mt-5 font-mono text-xs font-black uppercase tracking-[0.28em] text-light-ink/55 dark:text-white/55 md:mt-7">
-                {text.garageSubtitle}
-              </p>
-            </header>
+            <button
+              type="button"
+              onClick={() => setGarageView((current) => current === 'deck' ? 'grid' : 'deck')}
+              className={`absolute right-0 top-0 z-30 flex items-center gap-2 rounded-full border px-4 py-2 font-mono text-[10px] font-black uppercase tracking-[.12em] transition hover:-translate-y-0.5 ${
+                garageView === 'deck'
+                  ? 'border-white/55 bg-black/75 text-white hover:border-light-coral hover:text-light-coral'
+                  : 'border-light-ink bg-white/90 text-light-ink hover:text-light-coral dark:border-white dark:bg-[#111111]/90 dark:text-white'
+              }`}
+              aria-label={garageView === 'deck' ? `Switch to ${text.gridView}` : `Switch to ${text.deckView}`}
+            >
+              {garageView === 'deck' ? <LayoutGrid className="h-4 w-4" /> : <Layers3 className="h-4 w-4" />}
+              {garageView === 'deck' ? text.gridView : text.deckView}
+            </button>
 
-            <div className="flex flex-col gap-4 border-y border-light-ink bg-white/70 py-5 backdrop-blur-sm dark:border-white dark:bg-[#111111]/70 md:flex-row md:items-center md:justify-between">
-              <p className="font-mono text-xs font-black uppercase tracking-[0.22em] text-light-ink dark:text-white">
+            {garageView === 'grid' ? (
+              <header className="pb-10 pt-2 text-center md:pb-16">
+                <h1 className="font-sans text-[18vw] font-normal uppercase leading-[0.82] tracking-normal text-light-ink dark:text-white sm:text-[16vw] md:text-[12vw] lg:text-[9rem]">
+                  {text.garage}
+                </h1>
+                <p className="mt-5 font-mono text-xs font-black uppercase tracking-[0.28em] text-light-ink/55 dark:text-white/55 md:mt-7">
+                  {text.garageSubtitle}
+                </p>
+              </header>
+            ) : (
+              <header className="pb-8 pr-32 pt-1 md:pb-10">
+                <h1 className="font-sans text-4xl font-normal uppercase leading-none tracking-[-.03em] text-white md:text-6xl">
+                  {text.garage}
+                </h1>
+                <p className="mt-3 font-mono text-[10px] font-black uppercase tracking-[0.22em] text-white/45">
+                  {text.garageSubtitle}
+                </p>
+              </header>
+            )}
+
+            <div className={`flex flex-col gap-4 border-y py-5 backdrop-blur-sm md:flex-row md:items-center md:justify-between ${
+              garageView === 'deck'
+                ? 'border-white/35 bg-black/70'
+                : 'border-light-ink bg-white/70 dark:border-white dark:bg-[#111111]/70'
+            }`}>
+              <p className={`font-mono text-xs font-black uppercase tracking-[0.22em] ${garageView === 'deck' ? 'text-white' : 'text-light-ink dark:text-white'}`}>
                 {text.categories}
               </p>
               <div className="flex flex-wrap gap-2 md:justify-end">
@@ -1207,10 +1251,14 @@ function PortfolioApp() {
                   <button
                     key={category}
                     onClick={() => setActiveGarageCategory(category)}
-                    className={`rounded-full border-2 px-4 py-1.5 font-mono text-xs font-black uppercase leading-none transition hover:-translate-y-0.5 ${
-                      activeGarageCategory === category
-                        ? 'border-light-ink bg-light-ink text-white dark:border-white dark:bg-white dark:text-light-ink'
-                        : 'border-light-ink bg-white/90 text-light-ink hover:text-light-coral dark:border-white dark:bg-[#111111]/90 dark:text-white'
+                    className={`rounded-full border px-4 py-1.5 font-mono text-xs font-black uppercase leading-none transition hover:-translate-y-0.5 ${
+                      garageView === 'deck'
+                        ? activeGarageCategory === category
+                          ? 'border-light-coral bg-light-coral text-black'
+                          : 'border-white/45 bg-black text-white hover:border-light-coral hover:text-light-coral'
+                        : activeGarageCategory === category
+                          ? 'border-light-ink bg-light-ink text-white dark:border-white dark:bg-white dark:text-light-ink'
+                          : 'border-light-ink bg-white/90 text-light-ink hover:text-light-coral dark:border-white dark:bg-[#111111]/90 dark:text-white'
                     }`}
                   >
                     {category}
@@ -1219,7 +1267,15 @@ function PortfolioApp() {
               </div>
             </div>
 
-            <div className="grid grid-cols-1 border-l border-t border-light-ink dark:border-white sm:grid-cols-2 lg:grid-cols-3">
+            {garageView === 'deck' ? (
+              <GarageDeck
+                projects={filteredGaragePosts}
+                loading={projectsLoading}
+                error={projectsError}
+                onOpen={openGaragePost}
+              />
+            ) : (
+              <div className="grid grid-cols-1 border-l border-t border-light-ink dark:border-white sm:grid-cols-2 lg:grid-cols-3">
               {projectsLoading && (
                 <div className="col-span-full grid min-h-72 place-items-center border-b border-r border-light-ink bg-white/90 p-10 dark:border-white dark:bg-[#111111]/90">
                   <div className="flex items-center gap-3 font-mono text-xs font-bold uppercase tracking-widest text-light-ink/60 dark:text-white/60">
@@ -1310,7 +1366,8 @@ function PortfolioApp() {
                   </div>
                 </a>
               ))}
-            </div>
+              </div>
+            )}
           </div>
         </section>
       )}
