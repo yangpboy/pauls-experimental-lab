@@ -32,17 +32,12 @@ const projectPresentation = (project: ProjectSummary) => {
     showTitle: isPortfolio || isInvisible,
     background: isPortfolio ? '#FF7A2A' : isInvisible ? '#F7F4EF' : '#10131C',
     foreground: isInvisible ? '#10131C' : '#F7F4EF',
-    overlay: isPortfolio
-      ? 'linear-gradient(160deg, rgba(255,122,42,.98), rgba(232,84,25,.98))'
-      : isInvisible
-        ? 'linear-gradient(90deg, rgba(247,244,239,.86) 0%, rgba(247,244,239,.52) 54%, rgba(247,244,239,.18) 100%), linear-gradient(180deg, rgba(247,244,239,.30), transparent 46%, rgba(247,244,239,.76))'
-        : 'linear-gradient(90deg, rgba(16,19,28,.88) 0%, rgba(16,19,28,.56) 54%, rgba(16,19,28,.20) 100%), linear-gradient(180deg, rgba(16,19,28,.32), transparent 44%, rgba(16,19,28,.76))',
   };
 };
 
 export default function GarageDeck({ projects, loading, error, onOpen }: GarageDeckProps) {
   const viewportRef = useRef<HTMLDivElement>(null);
-  const cardRefs = useRef<Array<HTMLButtonElement | null>>([]);
+  const cardRefs = useRef<Array<HTMLAnchorElement | null>>([]);
   const positionRef = useRef(0);
   const targetRef = useRef(0);
   const velocityRef = useRef(0);
@@ -55,7 +50,7 @@ export default function GarageDeck({ projects, loading, error, onOpen }: GarageD
   const lastTimeRef = useRef(0);
   const dragVelocityRef = useRef(0);
   const suppressClickRef = useRef(false);
-  const wheelAccumulatorRef = useRef(0);
+  const wheelSnapTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const reducedMotionRef = useRef(false);
   const [selectedIndex, setSelectedIndex] = useState(0);
   const projectKey = useMemo(() => projects.map((project) => project.id).join('|'), [projects]);
@@ -66,8 +61,8 @@ export default function GarageDeck({ projects, loading, error, onOpen }: GarageD
     if (!viewport || count === 0) return;
 
     const narrow = viewport.clientWidth < 640;
-    const baseY = narrow ? 210 : 238;
-    const interval = narrow ? 126 : 170;
+    const baseY = narrow ? viewport.clientHeight * .25 : viewport.clientHeight * .2;
+    const interval = narrow ? viewport.clientHeight * .15 : viewport.clientHeight * .2;
     const cyclePosition = modulo(positionRef.current, count);
     const activeIndex = modulo(Math.round(positionRef.current), count);
 
@@ -80,13 +75,11 @@ export default function GarageDeck({ projects, loading, error, onOpen }: GarageD
       const xOffset = ((index * 5) % 15) - 7;
       const y = baseY + delta * interval;
       const rotation = tilt + delta * 1.7;
-      const scale = .84 + focus * .2 - Math.min(distance, 2.5) * .03;
+      const scale = .79 + focus * .25 - Math.min(distance, 2.5) * .035;
       const x = xOffset + delta * 1.5;
       const depth = 70 - distance * 38;
 
       card.style.transform = `translate3d(calc(-50% + ${x}%), ${y}px, ${depth}px) rotateZ(${rotation}deg) rotateX(4deg) scale(${scale})`;
-      card.style.opacity = String(Math.max(.3, 1 - Math.max(0, distance - 1.8) * .25));
-      card.style.filter = `saturate(${.72 + focus * .28}) brightness(${.78 + focus * .22})`;
       card.style.zIndex = String(30 - Math.round(distance * 4));
       card.dataset.selected = String(index === activeIndex);
     });
@@ -101,12 +94,17 @@ export default function GarageDeck({ projects, loading, error, onOpen }: GarageD
   }, []);
 
   const animateTo = useCallback((target: number, initialVelocity = 0) => {
-    stopAnimation();
     targetRef.current = target;
 
     if (reducedMotionRef.current) {
+      stopAnimation();
       positionRef.current = target;
       renderCards();
+      return;
+    }
+
+    if (isAnimatingRef.current) {
+      velocityRef.current += initialVelocity * .12;
       return;
     }
 
@@ -117,7 +115,7 @@ export default function GarageDeck({ projects, loading, error, onOpen }: GarageD
     const tick = (now: number) => {
       const dt = Math.min((now - previous) / 1000, .034);
       previous = now;
-      const force = (targetRef.current - positionRef.current) * 74 - velocityRef.current * 14;
+      const force = (targetRef.current - positionRef.current) * 82 - velocityRef.current * 16;
       velocityRef.current += force * dt;
       positionRef.current += velocityRef.current * dt;
       renderCards();
@@ -163,28 +161,37 @@ export default function GarageDeck({ projects, loading, error, onOpen }: GarageD
 
     const onWheel = (event: WheelEvent) => {
       if (projects.length < 2) return;
+      const target = event.target;
+      if (!(target instanceof Element) || !target.closest('[data-garage-card]')) return;
+
       event.preventDefault();
-      if (isAnimatingRef.current) return;
+      const modeMultiplier = event.deltaMode === WheelEvent.DOM_DELTA_LINE ? 16 : event.deltaMode === WheelEvent.DOM_DELTA_PAGE ? viewport.clientHeight : 1;
+      const delta = Math.max(-120, Math.min(120, event.deltaY * modeMultiplier));
+      const nextTarget = targetRef.current + delta / 170;
+      animateTo(nextTarget);
 
-      wheelAccumulatorRef.current += event.deltaY;
-      if (Math.abs(wheelAccumulatorRef.current) < 42) return;
-
-      const direction = wheelAccumulatorRef.current > 0 ? 1 : -1;
-      wheelAccumulatorRef.current = 0;
-      moveBy(direction);
+      if (wheelSnapTimerRef.current) clearTimeout(wheelSnapTimerRef.current);
+      wheelSnapTimerRef.current = setTimeout(() => {
+        wheelSnapTimerRef.current = null;
+        animateTo(Math.round(targetRef.current));
+      }, 90);
     };
 
     viewport.addEventListener('wheel', onWheel, { passive: false });
     return () => {
       resizeObserver.disconnect();
       viewport.removeEventListener('wheel', onWheel);
+      if (wheelSnapTimerRef.current) clearTimeout(wheelSnapTimerRef.current);
     };
-  }, [moveBy, projects.length, renderCards]);
+  }, [animateTo, projects.length, renderCards]);
 
   useEffect(() => () => stopAnimation(), [stopAnimation]);
 
   const handlePointerDown = (event: React.PointerEvent<HTMLDivElement>) => {
     if (event.pointerType === 'mouse' && event.button !== 0) return;
+    const target = event.target;
+    if (!(target instanceof Element) || !target.closest('[data-garage-card]')) return;
+
     stopAnimation();
     draggingRef.current = true;
     suppressClickRef.current = false;
@@ -203,7 +210,7 @@ export default function GarageDeck({ projects, loading, error, onOpen }: GarageD
 
     const now = performance.now();
     const elapsed = Math.max(8, now - lastTimeRef.current);
-    const dragUnit = viewport.clientWidth < 640 ? 132 : 176;
+    const dragUnit = viewport.clientWidth < 640 ? viewport.clientHeight * .16 : viewport.clientHeight * .21;
     const step = (event.clientY - lastYRef.current) / dragUnit;
 
     if (Math.abs(event.clientY - dragStartYRef.current) > 6) suppressClickRef.current = true;
@@ -224,19 +231,17 @@ export default function GarageDeck({ projects, loading, error, onOpen }: GarageD
     animateTo(Math.round(positionRef.current + impulse * .12), impulse);
   };
 
-  const handleCardClick = (project: ProjectSummary, index: number) => {
+  const handleCardClick = (event: React.MouseEvent<HTMLAnchorElement>, project: ProjectSummary) => {
     if (suppressClickRef.current) {
+      event.preventDefault();
       suppressClickRef.current = false;
       return;
     }
 
-    if (index === selectedIndex) {
-      onOpen(project);
-      return;
-    }
+    if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
 
-    const cyclePosition = modulo(positionRef.current, projects.length);
-    animateTo(positionRef.current + shortestDelta(index - cyclePosition, projects.length));
+    event.preventDefault();
+    onOpen(project);
   };
 
   const selectedProject = projects[selectedIndex];
@@ -263,13 +268,13 @@ export default function GarageDeck({ projects, loading, error, onOpen }: GarageD
       onPointerMove={handlePointerMove}
       onPointerUp={finishPointer}
       onPointerCancel={finishPointer}
-      className="relative h-[760px] w-full cursor-grab touch-pan-x overflow-hidden bg-[radial-gradient(circle_at_18%_20%,rgba(247,244,239,.08),transparent_24%),linear-gradient(180deg,#080808_0%,#030303_62%,#000_100%)] outline-none focus-visible:ring-2 focus-visible:ring-light-coral md:h-[900px] active:cursor-grabbing"
+      className="relative h-[100svh] min-h-[620px] w-full touch-auto overflow-hidden bg-[radial-gradient(circle_at_18%_20%,rgba(247,244,239,.08),transparent_24%),linear-gradient(180deg,#080808_0%,#030303_62%,#000_100%)] outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-light-coral"
       style={{ perspective: '1600px' }}
     >
-      <div className="pointer-events-none absolute left-4 top-4 z-40 font-mono text-[10px] uppercase tracking-[.08em] text-[#F7F4EF] md:left-6 md:top-6">
+      <div className="pointer-events-none absolute left-5 top-[8.5rem] z-40 font-mono text-[8px] uppercase tracking-[.08em] text-[#F7F4EF]/70 md:left-6 md:top-24 md:text-[9px]">
         Paul's Experimental Lab
       </div>
-      <div className="pointer-events-none absolute right-4 top-4 z-40 font-mono text-[10px] uppercase tracking-[.08em] text-[#F7F4EF] md:right-6 md:top-6">
+      <div className="pointer-events-none absolute right-5 top-[8.5rem] z-40 font-mono text-[8px] uppercase tracking-[.08em] text-[#F7F4EF]/70 md:right-6 md:top-24 md:text-[9px]">
         Garage / {String(projects.length).padStart(2, '0')}
       </div>
 
@@ -300,13 +305,14 @@ export default function GarageDeck({ projects, loading, error, onOpen }: GarageD
         {projects.map((project, index) => {
           const presentation = projectPresentation(project);
           return (
-            <button
+            <a
               key={project.id}
               ref={(node) => { cardRefs.current[index] = node; }}
-              type="button"
-              onClick={() => handleCardClick(project, index)}
-              aria-label={index === selectedIndex ? `Open ${project.title}` : `Select ${project.title}`}
-              className="group absolute left-1/2 top-0 aspect-[1.62/1] w-[88%] max-w-[760px] overflow-hidden rounded-[10px] border border-white/25 text-left shadow-[0_28px_58px_rgba(0,0,0,.52)] transition-[box-shadow] duration-200 will-change-transform [transform-style:preserve-3d] data-[selected=true]:shadow-[0_38px_72px_rgba(0,0,0,.72)] sm:w-[82%] lg:w-[72%]"
+              href={`/projects/${encodeURIComponent(project.slug)}`}
+              onClick={(event) => handleCardClick(event, project)}
+              aria-label={`Open ${project.title}`}
+              data-garage-card
+              className="group absolute left-1/2 top-0 aspect-[1.62/1] w-[94%] max-w-[1020px] cursor-grab touch-none overflow-hidden rounded-[10px] border border-white/25 text-left shadow-[0_28px_58px_rgba(0,0,0,.52)] transition-[box-shadow] duration-200 will-change-transform active:cursor-grabbing [transform-style:preserve-3d] data-[selected=true]:shadow-[0_38px_72px_rgba(0,0,0,.72)] sm:w-[86%] lg:w-[74%]"
               style={{
                 background: presentation.background,
                 color: presentation.foreground,
@@ -318,11 +324,11 @@ export default function GarageDeck({ projects, loading, error, onOpen }: GarageD
                   src={presentation.cover}
                   alt=""
                   className="absolute inset-0 h-full w-full object-cover"
+                  style={{ filter: 'none', opacity: 1, mixBlendMode: 'normal' }}
                   loading={index < 3 ? 'eager' : 'lazy'}
                   decoding="async"
                 />
               )}
-              <div className="pointer-events-none absolute inset-0" style={{ background: presentation.overlay }} />
               <div className="relative grid h-full grid-cols-[1.05fr_.95fr] grid-rows-[auto_1fr_auto] gap-3 p-4 font-mono uppercase md:p-6">
                 <div className="text-[9px] tracking-[.05em] opacity-80 md:text-[10px]">
                   {String(index + 1).padStart(2, '0')} / {project.category || 'Project'}
@@ -343,12 +349,10 @@ export default function GarageDeck({ projects, loading, error, onOpen }: GarageD
                   <span>{project.location || 'Archive'}</span>
                 </div>
               </div>
-            </button>
+            </a>
           );
         })}
       </div>
-
-      <div className="pointer-events-none absolute inset-x-0 bottom-0 z-30 h-[30%] bg-gradient-to-b from-transparent via-black/45 to-black" />
 
       {selectedProject && (
         <div className="pointer-events-none absolute bottom-16 left-1/2 z-40 flex -translate-x-1/2 items-center gap-2 whitespace-nowrap font-mono text-[10px] uppercase tracking-[.08em] text-[#F7F4EF] md:bottom-20">

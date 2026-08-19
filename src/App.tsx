@@ -865,7 +865,7 @@ function PortfolioApp() {
 
   return (
     <div className="min-h-screen overflow-x-hidden bg-light-gray text-light-ink font-sans selection:bg-light-teal/40 dark:bg-[#111111] dark:text-white">
-      <nav className="pointer-events-none fixed left-0 right-0 top-0 z-[120] flex items-center justify-between gap-4 px-5 py-3 md:px-[5vw] md:py-5">
+      <nav className={`pointer-events-none fixed left-0 right-0 top-0 z-[120] items-center justify-between gap-4 px-5 py-3 md:px-[5vw] md:py-5 ${activePage === 'garage' && garageView === 'deck' ? 'hidden' : 'flex'}`}>
         <a
           href="/"
           onClick={(event) => { event.preventDefault(); navigateToPage('head'); }}
@@ -1188,8 +1188,10 @@ function PortfolioApp() {
       {activePage === 'garage' && (
         <section
           id="garage"
-          className={`relative min-h-screen overflow-hidden px-5 pb-24 pt-28 md:px-12 md:pt-36 ${
-            garageView === 'deck' ? 'bg-black text-white' : 'bg-white dark:bg-[#111111]'
+          className={`relative min-h-screen overflow-hidden ${
+            garageView === 'deck'
+              ? 'h-[100svh] min-h-[620px] bg-black p-0 text-white'
+              : 'bg-white px-5 pb-24 pt-28 dark:bg-[#111111] md:px-12 md:pt-36'
           }`}
         >
           {garageView === 'grid' && (
@@ -1203,14 +1205,23 @@ function PortfolioApp() {
             </>
           )}
 
-          <div className="relative z-10 mx-auto max-w-[1480px]">
+          <div className={`relative z-10 mx-auto ${garageView === 'deck' ? 'h-full w-full max-w-none' : 'max-w-[1480px]'}`}>
+            {garageView === 'deck' && (
+              <GarageDeck
+                projects={filteredGaragePosts}
+                loading={projectsLoading}
+                error={projectsError}
+                onOpen={openGaragePost}
+              />
+            )}
+
             <button
               type="button"
               onClick={() => setGarageView((current) => current === 'deck' ? 'grid' : 'deck')}
-              className={`absolute right-0 top-0 z-30 flex items-center gap-2 rounded-full border px-4 py-2 font-mono text-[10px] font-black uppercase tracking-[.12em] transition hover:-translate-y-0.5 ${
+              className={`absolute z-50 flex items-center gap-2 rounded-full border px-4 py-2 font-mono text-[10px] font-black uppercase tracking-[.12em] transition hover:-translate-y-0.5 ${
                 garageView === 'deck'
-                  ? 'border-white/55 bg-black/75 text-white hover:border-light-coral hover:text-light-coral'
-                  : 'border-light-ink bg-white/90 text-light-ink hover:text-light-coral dark:border-white dark:bg-[#111111]/90 dark:text-white'
+                  ? 'right-4 top-4 border-white/65 bg-black/55 text-white backdrop-blur-md hover:border-light-coral hover:text-light-coral md:right-6 md:top-5'
+                  : 'right-0 top-0 border-light-ink bg-white/90 text-light-ink hover:text-light-coral dark:border-white dark:bg-[#111111]/90 dark:text-white'
               }`}
               aria-label={garageView === 'deck' ? `Switch to ${text.gridView}` : `Switch to ${text.deckView}`}
             >
@@ -1228,30 +1239,27 @@ function PortfolioApp() {
                 </p>
               </header>
             ) : (
-              <header className="pb-8 pr-32 pt-1 md:pb-10">
-                <h1 className="font-sans text-4xl font-normal uppercase leading-none tracking-[-.03em] text-white md:text-6xl">
+              <header className="pointer-events-none absolute left-4 top-4 z-40 md:left-6 md:top-5">
+                <h1 className="font-sans text-[clamp(2.5rem,5vw,4.75rem)] font-normal uppercase leading-none tracking-[-.045em] text-white">
                   {text.garage}
                 </h1>
-                <p className="mt-3 font-mono text-[10px] font-black uppercase tracking-[0.22em] text-white/45">
-                  {text.garageSubtitle}
-                </p>
               </header>
             )}
 
-            <div className={`flex flex-col gap-4 border-y py-5 backdrop-blur-sm md:flex-row md:items-center md:justify-between ${
+            <div className={`z-40 flex gap-2 backdrop-blur-md ${
               garageView === 'deck'
-                ? 'border-white/35 bg-black/70'
-                : 'border-light-ink bg-white/70 dark:border-white dark:bg-[#111111]/70'
+                ? 'absolute left-4 right-4 top-[4.75rem] flex-row items-center overflow-hidden rounded-full border border-white/50 bg-black/50 p-1.5 md:left-1/2 md:right-auto md:top-5 md:w-[min(48vw,640px)] md:-translate-x-1/2'
+                : 'flex-col border-y border-light-ink bg-white/70 py-5 dark:border-white dark:bg-[#111111]/70 md:flex-row md:items-center md:justify-between'
             }`}>
-              <p className={`font-mono text-xs font-black uppercase tracking-[0.22em] ${garageView === 'deck' ? 'text-white' : 'text-light-ink dark:text-white'}`}>
+              <p className={`font-mono text-xs font-black uppercase tracking-[0.22em] ${garageView === 'deck' ? 'sr-only' : 'text-light-ink dark:text-white'}`}>
                 {text.categories}
               </p>
-              <div className="flex flex-wrap gap-2 md:justify-end">
+              <div className={`flex gap-1.5 ${garageView === 'deck' ? 'w-full flex-nowrap overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden' : 'flex-wrap md:justify-end'}`}>
                 {garageCategories.map((category) => (
                   <button
                     key={category}
                     onClick={() => setActiveGarageCategory(category)}
-                    className={`rounded-full border px-4 py-1.5 font-mono text-xs font-black uppercase leading-none transition hover:-translate-y-0.5 ${
+                    className={`shrink-0 rounded-full border px-4 py-1.5 font-mono text-xs font-black uppercase leading-none transition hover:-translate-y-0.5 ${
                       garageView === 'deck'
                         ? activeGarageCategory === category
                           ? 'border-light-coral bg-light-coral text-black'
@@ -1267,14 +1275,7 @@ function PortfolioApp() {
               </div>
             </div>
 
-            {garageView === 'deck' ? (
-              <GarageDeck
-                projects={filteredGaragePosts}
-                loading={projectsLoading}
-                error={projectsError}
-                onOpen={openGaragePost}
-              />
-            ) : (
+            {garageView === 'deck' ? null : (
               <div className="grid grid-cols-1 border-l border-t border-light-ink dark:border-white sm:grid-cols-2 lg:grid-cols-3">
               {projectsLoading && (
                 <div className="col-span-full grid min-h-72 place-items-center border-b border-r border-light-ink bg-white/90 p-10 dark:border-white dark:bg-[#111111]/90">
