@@ -1211,7 +1211,6 @@ function PortfolioApp() {
                 projects={filteredGaragePosts}
                 loading={projectsLoading}
                 error={projectsError}
-                onOpen={openGaragePost}
               />
             )}
 

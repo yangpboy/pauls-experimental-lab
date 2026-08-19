@@ -20,7 +20,6 @@ interface GarageDeckProps {
   projects: ProjectSummary[];
   loading: boolean;
   error: string | null;
-  onOpen: (project: ProjectSummary) => void;
 }
 
 const projectPresentation = (project: ProjectSummary) => {
@@ -35,7 +34,7 @@ const projectPresentation = (project: ProjectSummary) => {
   };
 };
 
-export default function GarageDeck({ projects, loading, error, onOpen }: GarageDeckProps) {
+export default function GarageDeck({ projects, loading, error }: GarageDeckProps) {
   const viewportRef = useRef<HTMLDivElement>(null);
   const cardRefs = useRef<Array<HTMLAnchorElement | null>>([]);
   const positionRef = useRef(0);
@@ -75,7 +74,7 @@ export default function GarageDeck({ projects, loading, error, onOpen }: GarageD
       const xOffset = ((index * 5) % 15) - 7;
       const y = baseY + delta * interval;
       const rotation = tilt + delta * 1.7;
-      const scale = .79 + focus * .25 - Math.min(distance, 2.5) * .035;
+      const scale = .78 + focus * .22 - Math.min(distance, 2.5) * .035;
       const x = xOffset + delta * 1.5;
       const depth = 70 - distance * 38;
 
@@ -231,17 +230,11 @@ export default function GarageDeck({ projects, loading, error, onOpen }: GarageD
     animateTo(Math.round(positionRef.current + impulse * .12), impulse);
   };
 
-  const handleCardClick = (event: React.MouseEvent<HTMLAnchorElement>, project: ProjectSummary) => {
+  const handleCardClick = (event: React.MouseEvent<HTMLAnchorElement>) => {
     if (suppressClickRef.current) {
       event.preventDefault();
       suppressClickRef.current = false;
-      return;
     }
-
-    if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
-
-    event.preventDefault();
-    onOpen(project);
   };
 
   const selectedProject = projects[selectedIndex];
@@ -261,7 +254,7 @@ export default function GarageDeck({ projects, loading, error, onOpen }: GarageD
           moveBy(-1);
         } else if (event.key === 'Enter' && selectedProject) {
           event.preventDefault();
-          onOpen(selectedProject);
+          window.location.assign(`/projects/${encodeURIComponent(selectedProject.slug)}`);
         }
       }}
       onPointerDown={handlePointerDown}
@@ -309,10 +302,10 @@ export default function GarageDeck({ projects, loading, error, onOpen }: GarageD
               key={project.id}
               ref={(node) => { cardRefs.current[index] = node; }}
               href={`/projects/${encodeURIComponent(project.slug)}`}
-              onClick={(event) => handleCardClick(event, project)}
+              onClick={handleCardClick}
               aria-label={`Open ${project.title}`}
               data-garage-card
-              className="group absolute left-1/2 top-0 aspect-[1.62/1] w-[94%] max-w-[1020px] cursor-grab touch-none overflow-hidden rounded-[10px] border border-white/25 text-left shadow-[0_28px_58px_rgba(0,0,0,.52)] transition-[box-shadow] duration-200 will-change-transform active:cursor-grabbing [transform-style:preserve-3d] data-[selected=true]:shadow-[0_38px_72px_rgba(0,0,0,.72)] sm:w-[86%] lg:w-[74%]"
+              className="group absolute left-1/2 top-0 aspect-[1.62/1] w-[90%] max-w-[940px] cursor-grab touch-none overflow-hidden rounded-[10px] border border-white/25 text-left shadow-[0_28px_58px_rgba(0,0,0,.52)] transition-[box-shadow] duration-200 will-change-transform active:cursor-grabbing [transform-style:preserve-3d] data-[selected=true]:shadow-[0_38px_72px_rgba(0,0,0,.72)] sm:w-[82%] lg:w-[68%]"
               style={{
                 background: presentation.background,
                 color: presentation.foreground,
