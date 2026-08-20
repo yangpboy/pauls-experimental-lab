@@ -869,7 +869,7 @@ function PortfolioApp() {
         <a
           href="/"
           onClick={(event) => { event.preventDefault(); navigateToPage('head'); }}
-          className="pointer-events-auto max-w-[58vw] bg-white px-2 py-1 text-left font-mono text-[11px] font-normal uppercase leading-none tracking-normal transition hover:-translate-y-0.5 hover:text-light-coral dark:bg-[#111111] dark:text-white sm:max-w-none sm:text-base md:whitespace-nowrap md:text-[28px]"
+          className="garage-glass pointer-events-auto max-w-[58vw] border px-2 py-1 text-left font-mono text-[11px] font-normal uppercase leading-none tracking-normal transition hover:-translate-y-0.5 hover:border-light-coral hover:text-light-coral sm:max-w-none sm:text-base md:whitespace-nowrap md:text-[28px]"
           aria-label="Paul's Experimental Lab"
         >
           Paul's Experimental Lab
@@ -882,10 +882,10 @@ function PortfolioApp() {
                 key={item.page}
                 href={portfolioPageHref(item.page)}
                 onClick={(event) => { event.preventDefault(); navigateToPage(item.page); }}
-                className={`bg-white px-2 py-1 decoration-2 underline-offset-8 transition hover:-translate-y-0.5 hover:text-light-coral dark:bg-[#111111] ${
+                className={`garage-glass border px-2 py-1 decoration-2 underline-offset-8 transition hover:-translate-y-0.5 hover:border-light-coral hover:text-light-coral ${
                   activePage === item.page
-                    ? 'text-light-coral underline decoration-light-coral dark:text-light-coral'
-                    : 'text-light-ink no-underline dark:text-white'
+                    ? 'border-light-coral text-light-coral underline decoration-light-coral'
+                    : 'text-white no-underline'
                 }`}
               >
                 {item.label}
@@ -894,7 +894,7 @@ function PortfolioApp() {
             <button
               type="button"
               onClick={() => setIsSettingsOpen((open) => !open)}
-              className={`grid h-11 w-11 place-items-center border-2 bg-white transition hover:-translate-y-0.5 hover:text-light-coral dark:bg-[#111111] ${isSettingsOpen ? 'border-light-coral text-light-coral' : 'border-light-ink text-light-ink dark:border-white dark:text-white'}`}
+              className={`garage-glass grid h-11 w-11 place-items-center border-2 transition hover:-translate-y-0.5 hover:border-light-coral hover:text-light-coral ${isSettingsOpen ? 'border-light-coral text-light-coral' : 'text-white'}`}
               aria-label={text.openSettings}
               aria-expanded={isSettingsOpen}
             >
@@ -902,8 +902,8 @@ function PortfolioApp() {
             </button>
           </div>
 
-          {isSettingsOpen && <div className="absolute right-0 top-[calc(100%+0.75rem)] w-72 border-2 border-light-ink bg-white p-4 font-mono text-light-ink shadow-[8px_8px_0_rgba(43,43,43,0.22)] dark:border-white dark:bg-[#111111] dark:text-white">
-            <div className="flex items-center justify-between border-b-2 border-light-ink pb-3 dark:border-white">
+          {isSettingsOpen && <div className="garage-glass absolute right-0 top-[calc(100%+0.75rem)] w-72 border p-4 font-mono text-white">
+            <div className="flex items-center justify-between border-b border-white/35 pb-3">
               <span className="text-sm font-black uppercase">{text.settings}</span>
               <button type="button" className="grid h-8 w-8 place-items-center transition hover:text-light-coral" onClick={() => setIsSettingsOpen(false)} aria-label="Close settings"><X size={18} /></button>
             </div>
@@ -918,11 +918,11 @@ function PortfolioApp() {
                 <img src={themeToggleIcon} alt="" className="h-7 w-7 object-contain" />
               </button>
             </div>
-            <div className="flex items-center justify-between border-t border-light-ink/20 py-4 text-xs font-black uppercase dark:border-white/20">
+            <div className="flex items-center justify-between border-t border-white/20 py-4 text-xs font-black uppercase">
               <span>{language === 'en' ? 'Language' : '語言'}</span>
-              <button type="button" onClick={() => setLanguage((mode) => (mode === 'en' ? 'zh' : 'en'))} className="border-2 border-light-ink px-3 py-2 transition hover:text-light-coral dark:border-white">{language === 'en' ? '中' : 'EN'}</button>
+              <button type="button" onClick={() => setLanguage((mode) => (mode === 'en' ? 'zh' : 'en'))} className="border border-white/55 px-3 py-2 transition hover:border-light-coral hover:text-light-coral">{language === 'en' ? '中' : 'EN'}</button>
             </div>
-            <a href="/login" onClick={() => setIsSettingsOpen(false)} className="flex items-center justify-between border-t-2 border-light-ink pt-4 text-xs font-black uppercase transition hover:text-light-coral dark:border-white">
+            <a href="/login" onClick={() => setIsSettingsOpen(false)} className="flex items-center justify-between border-t border-white/35 pt-4 text-xs font-black uppercase transition hover:text-light-coral">
               <span className="flex items-center gap-2"><LockKeyhole size={15} /> {text.privateEditor}</span>
               <ChevronRight size={16} />
             </a>
@@ -933,7 +933,7 @@ function PortfolioApp() {
           <button
             type="button"
             onClick={() => setIsMobileMenuOpen((open) => !open)}
-            className="grid h-[53px] w-[53px] place-items-center border-2 border-light-ink bg-white text-light-ink transition hover:text-light-coral dark:border-white dark:bg-[#111111] dark:text-white"
+            className="garage-glass grid h-[53px] w-[53px] place-items-center border text-white transition hover:border-light-coral hover:text-light-coral"
             aria-label="Open navigation menu"
             aria-expanded={isMobileMenuOpen}
           >
@@ -942,7 +942,7 @@ function PortfolioApp() {
         </div>
 
         <div
-          className={`pointer-events-auto absolute left-4 right-4 top-[68px] border-2 border-light-ink bg-white p-4 shadow-[8px_8px_0_rgba(43,43,43,0.22)] dark:border-white dark:bg-[#111111] md:hidden ${
+          className={`garage-glass pointer-events-auto absolute left-4 right-4 top-[68px] border p-4 text-white md:hidden ${
             isMobileMenuOpen ? 'block' : 'hidden'
           }`}
         >
@@ -955,14 +955,14 @@ function PortfolioApp() {
                 className={`text-left decoration-2 underline-offset-8 transition hover:text-light-coral ${
                   activePage === item.page
                     ? 'text-light-coral underline decoration-light-coral'
-                    : 'text-light-ink no-underline dark:text-white'
+                    : 'text-white no-underline'
                 }`}
               >
                 {item.label}
               </a>
             ))}
           </div>
-          <div className="mt-5 flex items-center justify-between border-t-2 border-light-ink pt-4 font-mono text-sm font-black uppercase dark:border-white">
+          <div className="mt-5 flex items-center justify-between border-t border-white/35 pt-4 font-mono text-sm font-black uppercase">
             <span>{text.settings}</span>
             <Settings size={18} />
           </div>
@@ -986,7 +986,7 @@ function PortfolioApp() {
             <button
               type="button"
               onClick={() => setLanguage((mode) => (mode === 'en' ? 'zh' : 'en'))}
-              className="border-2 border-light-ink px-4 py-2 transition hover:-translate-y-0.5 hover:text-light-coral dark:border-white"
+              className="border border-white/55 px-4 py-2 transition hover:-translate-y-0.5 hover:border-light-coral hover:text-light-coral"
             >
               {language === 'en' ? '中' : 'EN'}
             </button>
@@ -1057,7 +1057,7 @@ function PortfolioApp() {
                   <span
                     id={`head-render-mode-tooltip-${index}`}
                     role="tooltip"
-                    className={`pointer-events-none absolute right-1/2 top-0 z-10 translate-x-1/2 -translate-y-[calc(100%+0.55rem)] whitespace-nowrap border-2 border-light-ink bg-white px-3 py-2 font-mono text-[10px] font-black uppercase leading-none text-light-ink shadow-[5px_5px_0_rgba(43,43,43,0.22)] transition dark:border-white dark:bg-[#111111] dark:text-white md:text-xs ${
+                    className={`garage-glass pointer-events-none absolute right-1/2 top-0 z-10 translate-x-1/2 -translate-y-[calc(100%+0.55rem)] whitespace-nowrap border px-3 py-2 font-mono text-[10px] font-black uppercase leading-none text-white transition md:text-xs ${
                       isHeadModeHintVisible ? 'opacity-100' : 'opacity-0 group-hover:opacity-100 group-focus-visible:opacity-100'
                     }`}
                   >
@@ -1089,7 +1089,7 @@ function PortfolioApp() {
                   <span
                     id={`theme-mode-tooltip-${index}`}
                     role="tooltip"
-                    className={`pointer-events-none absolute right-1/2 top-0 z-10 translate-x-1/2 -translate-y-[calc(100%+0.55rem)] whitespace-nowrap border-2 border-light-ink bg-white px-3 py-2 font-mono text-[10px] font-black uppercase leading-none text-light-ink shadow-[5px_5px_0_rgba(43,43,43,0.22)] transition dark:border-white dark:bg-[#111111] dark:text-white md:text-xs ${
+                    className={`garage-glass pointer-events-none absolute right-1/2 top-0 z-10 translate-x-1/2 -translate-y-[calc(100%+0.55rem)] whitespace-nowrap border px-3 py-2 font-mono text-[10px] font-black uppercase leading-none text-white transition md:text-xs ${
                       isThemeModeHintVisible ? 'opacity-100' : 'opacity-0 group-hover:opacity-100 group-focus-visible:opacity-100'
                     }`}
                   >
@@ -1168,14 +1168,14 @@ function PortfolioApp() {
                 </p>
               </div>
               <div className="group relative mx-auto mt-10 w-fit md:mt-12">
-                <div className="pointer-events-none absolute left-1/2 top-0 z-10 -translate-x-1/2 -translate-y-[calc(100%+0.75rem)] whitespace-nowrap rounded-full border-2 border-light-ink bg-white px-6 py-2 font-mono text-lg font-black uppercase text-light-ink opacity-0 shadow-[8px_8px_0_rgba(43,43,43,0.22)] transition group-hover:opacity-100 dark:border-white dark:bg-[#111111] dark:text-white">
+                <div className="garage-glass pointer-events-none absolute left-1/2 top-0 z-10 -translate-x-1/2 -translate-y-[calc(100%+0.75rem)] whitespace-nowrap rounded-full border px-6 py-2 font-mono text-lg font-black uppercase text-white opacity-0 transition group-hover:opacity-100">
                   {text.linkGarage}
                 </div>
                 <a
                   href="/#garage"
                   onClick={(event) => { event.preventDefault(); navigateToPage('garage'); }}
                   aria-label="Go to Garage"
-                  className="grid h-12 w-12 place-items-center border-2 border-light-ink bg-white text-light-ink shadow-[5px_5px_0_rgba(43,43,43,0.22)] transition hover:-translate-y-1 hover:text-light-coral dark:border-white dark:bg-[#111111] dark:text-white md:h-14 md:w-14"
+                  className="garage-glass grid h-12 w-12 place-items-center border text-white transition hover:-translate-y-1 hover:border-light-coral hover:text-light-coral md:h-14 md:w-14"
                 >
                   <ArrowDown className="h-6 w-6" />
                 </a>
@@ -1219,7 +1219,7 @@ function PortfolioApp() {
               onClick={() => setGarageView((current) => current === 'deck' ? 'grid' : 'deck')}
               className={`absolute z-50 flex items-center gap-2 rounded-full border px-4 py-2 font-mono text-[10px] font-black uppercase tracking-[.12em] transition hover:-translate-y-0.5 ${
                 garageView === 'deck'
-                  ? 'right-4 top-4 border-white/65 bg-black/55 text-white backdrop-blur-md hover:border-light-coral hover:text-light-coral md:right-6 md:top-5'
+                  ? 'garage-glass right-4 top-4 text-white hover:border-light-coral hover:text-light-coral md:right-6 md:top-5'
                   : 'right-0 top-0 border-light-ink bg-white/90 text-light-ink hover:text-light-coral dark:border-white dark:bg-[#111111]/90 dark:text-white'
               }`}
               aria-label={garageView === 'deck' ? `Switch to ${text.gridView}` : `Switch to ${text.deckView}`}
@@ -1247,7 +1247,7 @@ function PortfolioApp() {
 
             <div className={`z-40 flex gap-2 backdrop-blur-md ${
               garageView === 'deck'
-                ? 'absolute left-4 right-4 top-[4.75rem] flex-row items-center overflow-hidden rounded-full border border-white/50 bg-black/50 p-1.5 md:left-1/2 md:right-auto md:top-5 md:w-[min(48vw,640px)] md:-translate-x-1/2'
+                ? 'garage-glass absolute left-4 right-4 top-[4.75rem] flex-row items-center overflow-hidden rounded-full border p-1.5 md:left-1/2 md:right-auto md:top-5 md:w-[min(48vw,640px)] md:-translate-x-1/2'
                 : 'flex-col border-y border-light-ink bg-white/70 py-5 dark:border-white dark:bg-[#111111]/70 md:flex-row md:items-center md:justify-between'
             }`}>
               <p className={`font-mono text-xs font-black uppercase tracking-[0.22em] ${garageView === 'deck' ? 'sr-only' : 'text-light-ink dark:text-white'}`}>
@@ -1262,7 +1262,7 @@ function PortfolioApp() {
                       garageView === 'deck'
                         ? activeGarageCategory === category
                           ? 'border-light-coral bg-light-coral text-black'
-                          : 'border-white/45 bg-black text-white hover:border-light-coral hover:text-light-coral'
+                          : 'border-white/35 bg-white/5 text-white hover:border-light-coral hover:text-light-coral'
                         : activeGarageCategory === category
                           ? 'border-light-ink bg-light-ink text-white dark:border-white dark:bg-white dark:text-light-ink'
                           : 'border-light-ink bg-white/90 text-light-ink hover:text-light-coral dark:border-white dark:bg-[#111111]/90 dark:text-white'
@@ -1394,13 +1394,13 @@ function PortfolioApp() {
             onClick={closeProject}
           >
             <div className="fixed right-2 top-1/2 z-[230] flex -translate-y-1/2 origin-right scale-75 flex-col items-center gap-4 md:right-6 md:scale-100 md:gap-6">
-              <button className="rounded-full bg-neutral-100 p-3 text-neutral-800 shadow-lg transition-all hover:scale-110 hover:text-light-coral dark:bg-neutral-800 dark:text-white" onClick={closeProject} aria-label="Close project">
+              <button className="garage-glass rounded-full border p-3 text-white transition-all hover:scale-110 hover:border-light-coral hover:text-light-coral" onClick={closeProject} aria-label="Close project">
                 <X className="h-6 w-6" />
               </button>
               {selectedProject && (
-                <div className="flex flex-col gap-4 rounded-full border border-neutral-200 bg-neutral-100/80 p-4 shadow-xl backdrop-blur-md dark:border-neutral-700 dark:bg-neutral-800/80">
+                <div className="garage-glass flex flex-col gap-4 rounded-full border p-4">
                   <button
-                    className="group relative rounded-full p-3 text-neutral-800 transition-all hover:bg-white hover:text-light-coral disabled:cursor-wait disabled:opacity-60 dark:text-white dark:hover:bg-neutral-700"
+                    className="group relative rounded-full p-3 text-white transition-all hover:bg-white/10 hover:text-light-coral disabled:cursor-wait disabled:opacity-60"
                     onClick={(event) => { event.stopPropagation(); void handleGarageShare(selectedProject); }}
                     aria-label={`Share project (${projectShares} shares)`}
                     aria-busy={isProjectShareUpdating}
@@ -1410,7 +1410,7 @@ function PortfolioApp() {
                     <span className="pointer-events-none absolute -right-2 -top-2 min-w-5 rounded-full bg-light-coral px-1 py-0.5 text-center font-mono text-[9px] font-black leading-none text-white">{formatEngagementCount(projectShares)}</span>
                   </button>
                   <button
-                    className={`group relative rounded-full p-3 transition-all hover:bg-white disabled:cursor-wait disabled:opacity-60 dark:hover:bg-neutral-700 ${isProjectLiked ? 'text-light-coral' : 'text-neutral-800 hover:text-light-coral dark:text-white'}`}
+                    className={`group relative rounded-full p-3 transition-all hover:bg-white/10 disabled:cursor-wait disabled:opacity-60 ${isProjectLiked ? 'text-light-coral' : 'text-white hover:text-light-coral'}`}
                     onClick={(event) => { event.stopPropagation(); void handleLikeProject(); }}
                     aria-label={`${isProjectLiked ? 'Unlike' : 'Like'} project (${projectLikes} likes)`}
                     aria-busy={isProjectLikeUpdating}

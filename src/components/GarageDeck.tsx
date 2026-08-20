@@ -28,7 +28,7 @@ const projectPresentation = (project: ProjectSummary) => {
 
   return {
     cover: isPortfolio ? null : (COVER_OVERRIDES[project.slug] ?? project.coverImageUrl),
-    showTitle: isPortfolio || isInvisible,
+    showTitle: isPortfolio,
     background: isPortfolio ? '#FF7A2A' : isInvisible ? '#F7F4EF' : '#10131C',
     foreground: isInvisible ? '#10131C' : '#F7F4EF',
   };
@@ -199,7 +199,6 @@ export default function GarageDeck({ projects, loading, error }: GarageDeckProps
     lastYRef.current = event.clientY;
     lastTimeRef.current = performance.now();
     dragVelocityRef.current = 0;
-    event.currentTarget.setPointerCapture(event.pointerId);
   };
 
   const handlePointerMove = (event: React.PointerEvent<HTMLDivElement>) => {
@@ -212,7 +211,12 @@ export default function GarageDeck({ projects, loading, error }: GarageDeckProps
     const dragUnit = viewport.clientWidth < 640 ? viewport.clientHeight * .16 : viewport.clientHeight * .21;
     const step = (event.clientY - lastYRef.current) / dragUnit;
 
-    if (Math.abs(event.clientY - dragStartYRef.current) > 6) suppressClickRef.current = true;
+    if (Math.abs(event.clientY - dragStartYRef.current) > 6) {
+      suppressClickRef.current = true;
+      if (!event.currentTarget.hasPointerCapture(event.pointerId)) {
+        event.currentTarget.setPointerCapture(event.pointerId);
+      }
+    }
     dragVelocityRef.current = dragVelocityRef.current * .72 + (-step / (elapsed / 1000)) * .28;
     positionRef.current = dragStartPositionRef.current - (event.clientY - dragStartYRef.current) / dragUnit;
     lastYRef.current = event.clientY;
@@ -361,7 +365,7 @@ export default function GarageDeck({ projects, loading, error }: GarageDeckProps
             type="button"
             onPointerDown={(event) => event.stopPropagation()}
             onClick={(event) => { event.stopPropagation(); moveBy(-1); }}
-            className="grid h-9 w-9 place-items-center rounded-full border border-white/45 bg-black/45 text-white transition hover:border-light-coral hover:text-light-coral"
+            className="garage-glass grid h-9 w-9 place-items-center rounded-full border text-white transition hover:border-light-coral hover:text-light-coral"
             aria-label="Previous project"
           >
             <ArrowUp className="h-4 w-4" />
@@ -370,7 +374,7 @@ export default function GarageDeck({ projects, loading, error }: GarageDeckProps
             type="button"
             onPointerDown={(event) => event.stopPropagation()}
             onClick={(event) => { event.stopPropagation(); moveBy(1); }}
-            className="grid h-9 w-9 place-items-center rounded-full border border-white/45 bg-black/45 text-white transition hover:border-light-coral hover:text-light-coral"
+            className="garage-glass grid h-9 w-9 place-items-center rounded-full border text-white transition hover:border-light-coral hover:text-light-coral"
             aria-label="Next project"
           >
             <ArrowDown className="h-4 w-4" />
