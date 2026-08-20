@@ -869,23 +869,23 @@ function PortfolioApp() {
         <a
           href="/"
           onClick={(event) => { event.preventDefault(); navigateToPage('head'); }}
-          className="garage-glass pointer-events-auto max-w-[58vw] border px-2 py-1 text-left font-mono text-[11px] font-normal uppercase leading-none tracking-normal transition hover:-translate-y-0.5 hover:border-light-coral hover:text-light-coral sm:max-w-none sm:text-base md:whitespace-nowrap md:text-[28px]"
+          className="garage-glass pointer-events-auto max-w-[58vw] rounded-full border px-4 py-2.5 text-left font-mono text-[11px] font-black uppercase leading-none tracking-normal transition hover:border-light-coral hover:text-light-coral sm:max-w-none sm:text-sm md:whitespace-nowrap lg:text-base"
           aria-label="Paul's Experimental Lab"
         >
           Paul's Experimental Lab
         </a>
 
-        <div className="pointer-events-auto relative hidden shrink-0 items-center gap-5 md:flex">
-          <div className="flex items-center gap-7 font-mono text-[28px] font-normal uppercase leading-none tracking-normal">
+        <div className="pointer-events-auto relative hidden shrink-0 items-center md:flex">
+          <div className="garage-glass flex items-center gap-1.5 rounded-full border p-1.5 font-mono text-sm font-black uppercase leading-none tracking-normal lg:text-base">
             {navItems.map((item) => (
               <a
                 key={item.page}
                 href={portfolioPageHref(item.page)}
                 onClick={(event) => { event.preventDefault(); navigateToPage(item.page); }}
-                className={`garage-glass border px-2 py-1 decoration-2 underline-offset-8 transition hover:-translate-y-0.5 hover:border-light-coral hover:text-light-coral ${
+                className={`rounded-full border px-4 py-2.5 no-underline transition hover:border-light-coral hover:text-light-coral ${
                   activePage === item.page
-                    ? 'border-light-coral text-light-coral underline decoration-light-coral'
-                    : 'text-white no-underline'
+                    ? 'border-light-coral bg-light-coral text-black'
+                    : 'border-white/35 bg-white/5 text-white'
                 }`}
               >
                 {item.label}
@@ -894,7 +894,7 @@ function PortfolioApp() {
             <button
               type="button"
               onClick={() => setIsSettingsOpen((open) => !open)}
-              className={`garage-glass grid h-11 w-11 place-items-center border-2 transition hover:-translate-y-0.5 hover:border-light-coral hover:text-light-coral ${isSettingsOpen ? 'border-light-coral text-light-coral' : 'text-white'}`}
+              className={`grid h-10 w-10 place-items-center rounded-full border transition hover:border-light-coral hover:text-light-coral ${isSettingsOpen ? 'border-light-coral bg-light-coral text-black' : 'border-white/35 bg-white/5 text-white'}`}
               aria-label={text.openSettings}
               aria-expanded={isSettingsOpen}
             >
@@ -902,7 +902,7 @@ function PortfolioApp() {
             </button>
           </div>
 
-          {isSettingsOpen && <div className="garage-glass absolute right-0 top-[calc(100%+0.75rem)] w-72 border p-4 font-mono text-white">
+          {isSettingsOpen && <div className="garage-glass absolute right-0 top-[calc(100%+0.75rem)] w-72 rounded-3xl border p-4 font-mono text-white">
             <div className="flex items-center justify-between border-b border-white/35 pb-3">
               <span className="text-sm font-black uppercase">{text.settings}</span>
               <button type="button" className="grid h-8 w-8 place-items-center transition hover:text-light-coral" onClick={() => setIsSettingsOpen(false)} aria-label="Close settings"><X size={18} /></button>
@@ -933,7 +933,7 @@ function PortfolioApp() {
           <button
             type="button"
             onClick={() => setIsMobileMenuOpen((open) => !open)}
-            className="garage-glass grid h-[53px] w-[53px] place-items-center border text-white transition hover:border-light-coral hover:text-light-coral"
+            className="garage-glass grid h-[53px] w-[53px] place-items-center rounded-full border text-white transition hover:border-light-coral hover:text-light-coral"
             aria-label="Open navigation menu"
             aria-expanded={isMobileMenuOpen}
           >
@@ -942,20 +942,20 @@ function PortfolioApp() {
         </div>
 
         <div
-          className={`garage-glass pointer-events-auto absolute left-4 right-4 top-[68px] border p-4 text-white md:hidden ${
+          className={`garage-glass pointer-events-auto absolute left-4 right-4 top-[76px] rounded-3xl border p-3 text-white md:hidden ${
             isMobileMenuOpen ? 'block' : 'hidden'
           }`}
         >
-          <div className="flex flex-col gap-3 font-mono text-3xl uppercase leading-none">
+          <div className="flex flex-col gap-2 font-mono text-lg font-black uppercase leading-none">
             {navItems.map((item) => (
               <a
                 key={item.page}
                 href={portfolioPageHref(item.page)}
                 onClick={(event) => { event.preventDefault(); navigateToPage(item.page); }}
-                className={`text-left decoration-2 underline-offset-8 transition hover:text-light-coral ${
+                className={`rounded-full border px-5 py-3 text-left no-underline transition hover:border-light-coral hover:text-light-coral ${
                   activePage === item.page
-                    ? 'text-light-coral underline decoration-light-coral'
-                    : 'text-white no-underline'
+                    ? 'border-light-coral bg-light-coral text-black'
+                    : 'border-white/35 bg-white/5 text-white'
                 }`}
               >
                 {item.label}
@@ -1228,20 +1228,11 @@ function PortfolioApp() {
               {garageView === 'deck' ? text.gridView : text.deckView}
             </button>
 
-            {garageView === 'grid' ? (
-              <header className="pb-10 pt-2 text-center md:pb-16">
-                <h1 className="font-sans text-[18vw] font-normal uppercase leading-[0.82] tracking-normal text-light-ink dark:text-white sm:text-[16vw] md:text-[12vw] lg:text-[9rem]">
-                  {text.garage}
-                </h1>
-                <p className="mt-5 font-mono text-xs font-black uppercase tracking-[0.28em] text-light-ink/55 dark:text-white/55 md:mt-7">
+            {garageView === 'grid' && (
+              <header className="pb-8 pr-32 pt-2 md:pb-10">
+                <p className="font-mono text-[10px] font-black uppercase tracking-[0.28em] text-light-ink/55 dark:text-white/55">
                   {text.garageSubtitle}
                 </p>
-              </header>
-            ) : (
-              <header className="pointer-events-none absolute left-4 top-4 z-40 md:left-6 md:top-5">
-                <h1 className="font-sans text-[clamp(2.5rem,5vw,4.75rem)] font-normal uppercase leading-none tracking-[-.045em] text-white">
-                  {text.garage}
-                </h1>
               </header>
             )}
 
