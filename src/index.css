@@ -17,6 +17,25 @@
   }
 }
 
+@layer components {
+  .tini-columns {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    column-gap: 12px;
+    padding-left: 20px;
+    padding-right: 20px;
+  }
+
+  @media (min-width: 768px) {
+    .tini-columns {
+      grid-template-columns: repeat(5, minmax(0, 1fr));
+      column-gap: 20px;
+      padding-left: 32px;
+      padding-right: 32px;
+    }
+  }
+}
+
 @layer utilities {
   .glass {
     @apply bg-white/40 backdrop-blur-2xl border border-white/50 shadow-[0_8px_32px_rgba(0,0,0,0.05)];

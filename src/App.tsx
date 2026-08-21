@@ -7,6 +7,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { lazy, Suspense, useRef, useEffect, useState, useMemo } from 'react';
 import { X, Share2, ArrowUpRight, Heart, ChevronLeft, ChevronRight, BookOpen, ArrowDown, Menu, Settings, LockKeyhole, LayoutGrid, Layers3 } from 'lucide-react';
 import ProjectRenderer from './components/ProjectRenderer';
+import TiniWebCaseStudy from './components/TiniWebCaseStudy';
 import GarageDeck from './components/GarageDeck';
 import AdminApp from './admin/AdminApp';
 import AdminLogin from './admin/AdminLogin';
@@ -38,6 +39,10 @@ const projectSlugFromPath = () => {
 };
 
 type PortfolioPage = 'head' | 'garage' | 'sketchbook' | 'about';
+type TiniProjectView = 'deck' | 'web';
+
+const tiniProjectViewFromLocation = (): TiniProjectView =>
+  new URLSearchParams(window.location.search).get('view') === 'web' ? 'web' : 'deck';
 
 const portfolioPageFromLocation = (): PortfolioPage => {
   if (projectSlugFromPath()) return 'garage';
@@ -532,6 +537,7 @@ function PortfolioApp() {
   const [projectsError, setProjectsError] = useState<string | null>(null);
   const [routeProjectSlug, setRouteProjectSlug] = useState<string | null>(() => projectSlugFromPath());
   const [selectedProject, setSelectedProject] = useState<Project | null>(null);
+  const [tiniProjectView, setTiniProjectView] = useState<TiniProjectView>(() => tiniProjectViewFromLocation());
   const [projectLoading, setProjectLoading] = useState(() => Boolean(projectSlugFromPath()));
   const [projectError, setProjectError] = useState<string | null>(null);
   const [projectLikes, setProjectLikes] = useState(0);
@@ -541,6 +547,7 @@ function PortfolioApp() {
   const [isProjectShareUpdating, setIsProjectShareUpdating] = useState(false);
   const [isHeadModeHintVisible, setIsHeadModeHintVisible] = useState(false);
   const [isThemeModeHintVisible, setIsThemeModeHintVisible] = useState(false);
+  const projectScrollRef = useRef<HTMLDivElement>(null);
 
   const theme = colorMode;
   const themeToggleIcon = colorMode === 'light' ? '/icons/B_ dark.png' : '/icons/W_ light.png';
@@ -701,6 +708,7 @@ function PortfolioApp() {
     const onPopState = () => {
       const slug = projectSlugFromPath();
       setRouteProjectSlug(slug);
+      setTiniProjectView(slug === 'dark-side-of-the-tini' ? tiniProjectViewFromLocation() : 'deck');
       if (slug) {
         setActivePage('garage');
         setProjectLoading(true);
@@ -789,6 +797,7 @@ function PortfolioApp() {
 
     setProjectLikes(post.likesCount);
     setProjectShares(post.sharesCount);
+    setTiniProjectView('deck');
 
     window.history.pushState({ projectModal: true }, '', `/projects/${encodeURIComponent(post.slug)}`);
     setSelectedProject(null);
@@ -802,6 +811,22 @@ function PortfolioApp() {
     setRouteProjectSlug(null);
     setSelectedProject(null);
     setProjectError(null);
+    setTiniProjectView('deck');
+  };
+
+  const changeTiniProjectView = (view: TiniProjectView) => {
+    setTiniProjectView(view);
+
+    const nextUrl = new URL(window.location.href);
+    if (view === 'web') nextUrl.searchParams.set('view', 'web');
+    else nextUrl.searchParams.delete('view');
+    window.history.replaceState(
+      { ...(window.history.state ?? {}), tiniProjectView: view },
+      '',
+      `${nextUrl.pathname}${nextUrl.search}`,
+    );
+
+    projectScrollRef.current?.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   const handleLikeProject = async () => {
@@ -1384,14 +1409,51 @@ function PortfolioApp() {
             className="fixed inset-0 z-[200] flex items-center justify-center bg-white transition-all duration-300 dark:bg-[#050505]"
             onClick={closeProject}
           >
-            <div className="fixed right-2 top-1/2 z-[230] flex -translate-y-1/2 origin-right scale-75 flex-col items-center gap-4 md:right-6 md:scale-100 md:gap-6">
-              <button className="garage-glass rounded-full border p-3 text-white transition-all hover:scale-110 hover:border-light-coral hover:text-light-coral" onClick={closeProject} aria-label="Close project">
+            <div className="fixed right-1 top-1/2 z-[230] flex -translate-y-1/2 origin-right scale-[.82] flex-col items-center gap-2 md:right-6 md:scale-100">
+              {selectedProject?.slug === 'dark-side-of-the-tini' && (
+                <div
+                  className="garage-glass flex w-20 flex-col items-center gap-2.5 rounded-full border border-white/45 p-[5px] text-white shadow-2xl"
+                  role="group"
+                  aria-label="Choose Dark Side of the Tini presentation"
+                  onClick={(event) => event.stopPropagation()}
+                >
+                  <button
+                    type="button"
+                    onClick={() => changeTiniProjectView('deck')}
+                    className={`flex h-[68px] w-[68px] shrink-0 items-center justify-center rounded-full border transition ${
+                      tiniProjectView === 'deck'
+                        ? 'border-light-coral bg-light-coral text-black'
+                        : 'border-white/45 bg-black/75 text-white hover:border-light-coral hover:text-light-coral'
+                    }`}
+                    aria-pressed={tiniProjectView === 'deck'}
+                    aria-label="Deck view"
+                  >
+                    <BookOpen className="h-5 w-5" />
+                    <span className="sr-only">Deck</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => changeTiniProjectView('web')}
+                    className={`flex h-[68px] w-[68px] shrink-0 items-center justify-center rounded-full border transition ${
+                      tiniProjectView === 'web'
+                        ? 'border-light-coral bg-light-coral text-black'
+                        : 'border-white/45 bg-black/75 text-white hover:border-light-coral hover:text-light-coral'
+                    }`}
+                    aria-pressed={tiniProjectView === 'web'}
+                    aria-label="Web view"
+                  >
+                    <LayoutGrid className="h-5 w-5" />
+                    <span className="sr-only">Web</span>
+                  </button>
+                </div>
+              )}
+              <button className="garage-glass flex h-16 w-16 shrink-0 items-center justify-center rounded-full border border-white/45 p-0 text-white transition-all hover:scale-105 hover:border-light-coral hover:text-light-coral" onClick={closeProject} aria-label="Close project">
                 <X className="h-6 w-6" />
               </button>
               {selectedProject && (
-                <div className="garage-glass flex flex-col gap-4 rounded-full border p-4">
+                <div className="garage-glass flex w-20 flex-col items-center gap-2.5 rounded-full border border-white/45 p-[5px]">
                   <button
-                    className="group relative rounded-full p-3 text-white transition-all hover:bg-white/10 hover:text-light-coral disabled:cursor-wait disabled:opacity-60"
+                    className="group relative flex h-[68px] w-[68px] shrink-0 items-center justify-center rounded-full border border-white/35 bg-black/35 p-0 text-white transition-all hover:border-light-coral hover:bg-white/10 hover:text-light-coral disabled:cursor-wait disabled:opacity-60"
                     onClick={(event) => { event.stopPropagation(); void handleGarageShare(selectedProject); }}
                     aria-label={`Share project (${projectShares} shares)`}
                     aria-busy={isProjectShareUpdating}
@@ -1401,7 +1463,7 @@ function PortfolioApp() {
                     <span className="pointer-events-none absolute -right-2 -top-2 min-w-5 rounded-full bg-light-coral px-1 py-0.5 text-center font-mono text-[9px] font-black leading-none text-white">{formatEngagementCount(projectShares)}</span>
                   </button>
                   <button
-                    className={`group relative rounded-full p-3 transition-all hover:bg-white/10 disabled:cursor-wait disabled:opacity-60 ${isProjectLiked ? 'text-light-coral' : 'text-white hover:text-light-coral'}`}
+                    className={`group relative flex h-[68px] w-[68px] shrink-0 items-center justify-center rounded-full border border-white/35 bg-black/35 p-0 transition-all hover:border-light-coral hover:bg-white/10 disabled:cursor-wait disabled:opacity-60 ${isProjectLiked ? 'text-light-coral' : 'text-white hover:text-light-coral'}`}
                     onClick={(event) => { event.stopPropagation(); void handleLikeProject(); }}
                     aria-label={`${isProjectLiked ? 'Unlike' : 'Like'} project (${projectLikes} likes)`}
                     aria-busy={isProjectLikeUpdating}
@@ -1415,6 +1477,7 @@ function PortfolioApp() {
             </div>
 
             <motion.div
+              ref={projectScrollRef}
               initial={{ y: 40, opacity: 0 }}
               animate={{ y: 0, opacity: 1 }}
               exit={{ y: 40, opacity: 0 }}
@@ -1433,29 +1496,33 @@ function PortfolioApp() {
                 </div>
               )}
               {!projectLoading && selectedProject && (
-                <>
-                  <ProjectRenderer project={selectedProject} />
-                  <div className="relative z-30 w-full bg-white dark:bg-[#050505]">
-                    <div className="mx-auto grid max-w-6xl gap-12 p-6 md:p-24 lg:grid-cols-3">
-                      <div className="lg:col-span-2">
-                        <p className="font-mono text-xs font-bold uppercase tracking-[0.2em] text-light-coral">{selectedProject.category}</p>
-                        <h1 className="mt-4 text-4xl font-semibold leading-tight text-neutral-900 dark:text-white md:text-6xl">{selectedProject.title}</h1>
-                        <p className="mt-6 text-xl font-light leading-relaxed text-neutral-700 dark:text-neutral-300 md:text-2xl">{selectedProject.summary}</p>
-                      </div>
-                      <div className="space-y-8 rounded-3xl border border-neutral-100 bg-neutral-50 p-8 dark:border-neutral-800 dark:bg-neutral-900/50">
-                        <div>
-                          <h4 className="mb-4 text-xs font-bold uppercase tracking-[0.2em] text-neutral-400 dark:text-neutral-500">Project Info</h4>
-                          <div className="space-y-4">
-                            <div><span className="text-[10px] uppercase tracking-widest text-neutral-400">Date</span><p className="text-sm font-bold">{selectedProject.projectDate} {selectedProject.location && `| ${selectedProject.location}`}</p></div>
-                            <div><span className="text-[10px] uppercase tracking-widest text-neutral-400">Category</span><p className="text-sm font-bold">{selectedProject.category}</p></div>
-                            <div><span className="text-[10px] uppercase tracking-widest text-neutral-400">Author</span><p className="text-sm font-bold">{selectedProject.author}</p></div>
+                selectedProject.slug === 'dark-side-of-the-tini' && tiniProjectView === 'web'
+                  ? <TiniWebCaseStudy />
+                  : (
+                    <>
+                      <ProjectRenderer project={selectedProject} />
+                      <div className="relative z-30 w-full bg-white dark:bg-[#050505]">
+                        <div className="mx-auto grid max-w-6xl gap-12 p-6 md:p-24 lg:grid-cols-3">
+                          <div className="lg:col-span-2">
+                            <p className="font-mono text-xs font-bold uppercase tracking-[0.2em] text-light-coral">{selectedProject.category}</p>
+                            <h1 className="mt-4 text-4xl font-semibold leading-tight text-neutral-900 dark:text-white md:text-6xl">{selectedProject.title}</h1>
+                            <p className="mt-6 text-xl font-light leading-relaxed text-neutral-700 dark:text-neutral-300 md:text-2xl">{selectedProject.summary}</p>
+                          </div>
+                          <div className="space-y-8 rounded-3xl border border-neutral-100 bg-neutral-50 p-8 dark:border-neutral-800 dark:bg-neutral-900/50">
+                            <div>
+                              <h4 className="mb-4 text-xs font-bold uppercase tracking-[0.2em] text-neutral-400 dark:text-neutral-500">Project Info</h4>
+                              <div className="space-y-4">
+                                <div><span className="text-[10px] uppercase tracking-widest text-neutral-400">Date</span><p className="text-sm font-bold">{selectedProject.projectDate} {selectedProject.location && `| ${selectedProject.location}`}</p></div>
+                                <div><span className="text-[10px] uppercase tracking-widest text-neutral-400">Category</span><p className="text-sm font-bold">{selectedProject.category}</p></div>
+                                <div><span className="text-[10px] uppercase tracking-widest text-neutral-400">Author</span><p className="text-sm font-bold">{selectedProject.author}</p></div>
+                              </div>
+                            </div>
+                            {selectedProject.tools.length > 0 && <div><h4 className="mb-4 text-xs font-bold uppercase tracking-[0.2em] text-neutral-400 dark:text-neutral-500">Tools</h4><div className="flex flex-wrap gap-2">{selectedProject.tools.map((tool) => <span key={tool} className="rounded-full border border-neutral-200 bg-white px-3 py-1 text-[10px] font-bold uppercase tracking-widest text-neutral-600 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-300">{tool}</span>)}</div></div>}
                           </div>
                         </div>
-                        {selectedProject.tools.length > 0 && <div><h4 className="mb-4 text-xs font-bold uppercase tracking-[0.2em] text-neutral-400 dark:text-neutral-500">Tools</h4><div className="flex flex-wrap gap-2">{selectedProject.tools.map((tool) => <span key={tool} className="rounded-full border border-neutral-200 bg-white px-3 py-1 text-[10px] font-bold uppercase tracking-widest text-neutral-600 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-300">{tool}</span>)}</div></div>}
                       </div>
-                    </div>
-                  </div>
-                </>
+                    </>
+                  )
               )}
             </motion.div>
           </motion.div>
