@@ -26,12 +26,16 @@
     padding-right: 20px;
   }
 
+  .tini-columns.tini-columns-flush {
+    column-gap: 0;
+  }
+
   @media (min-width: 768px) {
     .tini-columns {
       grid-template-columns: repeat(5, minmax(0, 1fr));
       column-gap: 20px;
-      padding-left: 32px;
-      padding-right: 32px;
+      padding-left: 48px;
+      padding-right: 48px;
     }
   }
 }

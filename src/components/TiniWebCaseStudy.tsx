@@ -16,27 +16,23 @@ export default function TiniWebCaseStudy() {
   return (
     <article className="tini-web min-h-screen overflow-hidden bg-[#070807] text-[#eeeae0]">
       <section
-        className="relative isolate flex min-h-[100svh] overflow-hidden bg-cover bg-[70%_center]"
+        className="relative isolate flex min-h-[100svh] overflow-hidden bg-black bg-contain bg-right bg-no-repeat"
         style={{ backgroundImage: "url('/works/tini/tini%20(2).jpg')" }}
         aria-labelledby="tini-web-title"
       >
         <video
-          className="absolute inset-0 -z-20 h-full w-full origin-center translate-x-[20%] scale-[1.4] object-cover motion-reduce:hidden"
+          className="absolute inset-0 -z-20 h-full w-full bg-black object-contain object-right motion-reduce:hidden"
           autoPlay
           muted
           loop
           playsInline
           preload="metadata"
+          onLoadedMetadata={(event) => { event.currentTarget.playbackRate = 0.8; }}
           poster="/works/tini/tini (2).jpg"
           aria-hidden="true"
         >
           <source src="/works/tini/hero.mp4" type="video/mp4" />
         </video>
-        <div
-          className="absolute inset-0 -z-10 bg-[linear-gradient(180deg,rgba(3,4,3,.7)_0%,rgba(3,4,3,.08)_38%,rgba(3,4,3,.92)_100%),linear-gradient(90deg,rgba(3,4,3,.54)_0%,transparent_65%)]"
-          aria-hidden="true"
-        />
-
         <div className="tini-columns absolute inset-x-0 top-20 border-b border-white/25 pb-4 font-mono text-[9px] font-bold uppercase tracking-[.14em] text-white/75 md:top-5 md:text-[10px]">
           <span className="col-span-1 md:col-span-2">Irregular geologic assemblies</span>
           <span className="col-start-2 text-right md:col-start-5">Germany · 2025</span>
@@ -48,7 +44,7 @@ export default function TiniWebCaseStudy() {
           </div>
           <h1
             id="tini-web-title"
-            className="col-span-2 col-start-1 text-[clamp(2.8rem,5.6vw,6.4rem)] font-medium uppercase leading-[.82] tracking-[-.065em] md:col-span-3 md:col-start-1"
+            className="col-span-2 col-start-1 text-[clamp(1.05rem,2vw,2.3rem)] font-medium uppercase leading-[.86] tracking-[-.045em] md:col-span-3 md:col-start-1"
           >
             <span className="block">Dark Side</span>
             <span className="block">of the Tini</span>
@@ -99,10 +95,12 @@ export default function TiniWebCaseStudy() {
             Floating.<br />Penetrating.<br /><span className="text-[#58ad1d]">Glowing.</span>
           </h2>
           <p className="col-span-2 text-sm leading-7 md:col-span-2 md:col-start-4 md:row-start-2 md:text-base">
-            The Hizz rocking chair suggested separate geometries passing through
-            one another while remaining visually balanced. Moonlight and early
-            photography added a second rule: darkness should reveal the object,
-            not conceal it.
+            To let stone become the protagonist rather than a material to be
+            shaped, we set three goals: keep its irregular silhouette dominant,
+            minimise the visible support, and use light to reveal its presence.
+            The Hizz rocking chair showed how separate geometries could pass
+            through one another while remaining visually balanced; moonlight
+            and early photography established the atmosphere.
           </p>
         </header>
 
@@ -162,6 +160,31 @@ export default function TiniWebCaseStudy() {
             </li>
           ))}
         </ol>
+      </section>
+
+      <section className="border-t border-white/15 bg-[#070807] pb-24 md:pb-36">
+        <header className="tini-columns gap-y-8 py-16 md:py-24">
+          <div className="col-span-2 md:col-span-1">
+            <SectionLabel>Sketches / Form study</SectionLabel>
+          </div>
+          <h2 className="col-span-2 text-[clamp(2.6rem,5vw,5.5rem)] font-normal leading-[.95] tracking-[-.055em] md:col-span-3 md:col-start-2">
+            Finding balance before calculating it.
+          </h2>
+          <p className="col-span-2 text-sm leading-7 text-white/60 md:col-span-1 md:col-start-5 md:text-base">
+            Early sketches tested how a low base could stabilise the object
+            while allowing the stone to remain visually dominant.
+          </p>
+        </header>
+        <div className="tini-columns">
+          <figure className="col-span-2 md:col-span-3 md:col-start-2">
+            <LazyImage
+              src="/works/tini/sketches.png"
+              alt="Hand-drawn studies exploring the base, balance, and support around the stone"
+              className="aspect-square w-full object-cover object-top"
+            />
+            <Caption><span>Analogue exploration</span><span>Base / balance / support</span></Caption>
+          </figure>
+        </div>
       </section>
 
       <section className="tini-columns gap-y-20 border-t border-white/15 bg-[#10120f] py-24 md:py-36">
@@ -239,7 +262,7 @@ export default function TiniWebCaseStudy() {
             as deliberate.
           </p>
         </header>
-        <div className="tini-columns mt-20 gap-y-5 md:mt-28">
+        <div className="tini-columns tini-columns-flush mt-20 md:mt-28">
           {[5, 1, 2, 3].map((image, index) => (
             <figure
               key={image}

@@ -1,5 +1,13 @@
+import { ChevronLeft, ChevronRight, ZoomIn } from 'lucide-react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import LazyImage from './LazyImage';
 import type { GalleryImage, ProcessStep, Project, ProjectBlock, ProjectBlockContent } from '../types/cms';
+
+type PreviewImage = {
+  url: string;
+  alt: string;
+  caption?: string;
+};
 
 const text = (value: unknown) => typeof value === 'string' ? value : '';
 const object = (value: unknown) => value && typeof value === 'object' && !Array.isArray(value)
@@ -13,6 +21,39 @@ const galleryImages = (content: ProjectBlockContent): GalleryImage[] => Array.is
 const processSteps = (content: ProjectBlockContent): ProcessStep[] => Array.isArray(content.steps)
   ? content.steps.filter((item): item is ProcessStep => Boolean(item && typeof item.title === 'string'))
   : [];
+
+const previewImages = (project: Project): PreviewImage[] => project.blocks
+  .flatMap((block): PreviewImage[] => {
+    const content = block.content;
+
+    if (block.type === 'image') {
+      const url = text(content.url) || text(content.imageUrl);
+      return url ? [{ url, alt: text(content.alt) || project.title, caption: text(content.caption) || undefined }] : [];
+    }
+
+    if (block.type === 'gallery') {
+      return galleryImages(content).map((image, index) => ({
+        url: image.url,
+        alt: image.alt || `${project.title} image ${index + 1}`,
+        caption: image.caption,
+      }));
+    }
+
+    if (block.type === 'twoColumn') {
+      return [object(content.left), object(content.right)].flatMap((column, index) => {
+        const url = text(column.imageUrl);
+        return url ? [{ url, alt: text(column.heading) || `${project.title} column ${index + 1}` }] : [];
+      });
+    }
+
+    if (block.type === 'process') {
+      return processSteps(content).flatMap((step) => step.imageUrl
+        ? [{ url: step.imageUrl, alt: step.title, caption: step.description }]
+        : []);
+    }
+
+    return [];
+  });
 
 const getVideoEmbed = (value: string) => {
   try {
@@ -37,7 +78,43 @@ const BodyCopy = ({ value }: { value: string }) => (
   </div>
 );
 
-const Block = ({ block, project, priority }: { block: ProjectBlock; project: Project; priority: boolean }) => {
+const ZoomableImage = ({
+  src,
+  alt,
+  className,
+  priority,
+  onOpen,
+}: {
+  src: string;
+  alt: string;
+  className: string;
+  priority?: boolean;
+  onOpen: (url: string) => void;
+}) => (
+  <button
+    type="button"
+    className="group relative block w-full cursor-zoom-in overflow-hidden text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-light-coral"
+    onClick={() => onOpen(src)}
+    aria-label={`Enlarge image: ${alt}`}
+  >
+    <LazyImage src={src} alt={alt} className={className} priority={priority} />
+    <span className="pointer-events-none absolute bottom-3 right-3 grid h-9 w-9 place-items-center rounded-full border border-white/60 bg-black/45 text-white opacity-0 backdrop-blur-sm transition-opacity group-hover:opacity-100 group-focus-visible:opacity-100">
+      <ZoomIn size={16} aria-hidden="true" />
+    </span>
+  </button>
+);
+
+const Block = ({
+  block,
+  project,
+  priority,
+  onImageOpen,
+}: {
+  block: ProjectBlock;
+  project: Project;
+  priority: boolean;
+  onImageOpen: (url: string) => void;
+}) => {
   const content = block.content;
 
   if (block.type === 'hero') {
@@ -71,7 +148,13 @@ const Block = ({ block, project, priority }: { block: ProjectBlock; project: Pro
     if (!url) return null;
     return (
       <figure className="bg-white dark:bg-[#050505]">
-        <LazyImage src={url} alt={text(content.alt) || project.title} className="block h-auto w-full" priority={priority} />
+        <ZoomableImage
+          src={url}
+          alt={text(content.alt) || project.title}
+          className="block h-auto w-full"
+          priority={priority}
+          onOpen={onImageOpen}
+        />
         {text(content.caption) && <figcaption className="mx-auto max-w-6xl px-6 py-4 text-sm text-neutral-500 dark:text-neutral-400">{text(content.caption)}</figcaption>}
       </figure>
     );
@@ -87,11 +170,12 @@ const Block = ({ block, project, priority }: { block: ProjectBlock; project: Pro
       <section className={`grid grid-cols-1 bg-white dark:bg-[#050505] ${columnClass} ${gapClass}`}>
         {images.map((image, index) => (
           <figure key={`${image.url}-${index}`} className="min-w-0">
-            <LazyImage
+            <ZoomableImage
               src={image.url}
               alt={image.alt || `${project.title} image ${index + 1}`}
               className={`block w-full object-cover ${content.square ? 'aspect-square' : 'h-auto'}`}
               priority={priority && index < 2}
+              onOpen={onImageOpen}
             />
             {image.caption && <figcaption className="px-4 py-3 text-xs text-neutral-500 dark:text-neutral-400">{image.caption}</figcaption>}
           </figure>
@@ -130,7 +214,14 @@ const Block = ({ block, project, priority }: { block: ProjectBlock; project: Pro
     const right = object(content.right);
     const renderColumn = (column: Record<string, unknown>, label: string) => (
       <article className="space-y-6">
-        {text(column.imageUrl) && <LazyImage src={text(column.imageUrl)} alt={`${project.title} ${label}`} className="aspect-[4/3] w-full object-cover" />}
+        {text(column.imageUrl) && (
+          <ZoomableImage
+            src={text(column.imageUrl)}
+            alt={text(column.heading) || `${project.title} ${label}`}
+            className="aspect-[4/3] w-full object-cover"
+            onOpen={onImageOpen}
+          />
+        )}
         {text(column.heading) && <h3 className="text-2xl font-semibold md:text-4xl">{text(column.heading)}</h3>}
         {text(column.body) && <BodyCopy value={text(column.body)} />}
       </article>
@@ -154,7 +245,16 @@ const Block = ({ block, project, priority }: { block: ProjectBlock; project: Pro
           {steps.map((step, index) => (
             <article key={`${step.title}-${index}`} className="bg-neutral-100 p-6 dark:bg-neutral-950 md:p-10">
               <p className="font-mono text-xs font-bold text-light-coral">{String(index + 1).padStart(2, '0')}</p>
-              {step.imageUrl && <LazyImage src={step.imageUrl} alt={step.title} className="mt-6 aspect-[4/3] w-full object-cover" />}
+              {step.imageUrl && (
+                <div className="mt-6">
+                  <ZoomableImage
+                    src={step.imageUrl}
+                    alt={step.title}
+                    className="aspect-[4/3] w-full object-cover"
+                    onOpen={onImageOpen}
+                  />
+                </div>
+              )}
               <h3 className="mt-6 text-2xl font-semibold">{step.title}</h3>
               {step.description && <p className="mt-4 leading-7 text-neutral-600 dark:text-neutral-400">{step.description}</p>}
             </article>
@@ -166,6 +266,41 @@ const Block = ({ block, project, priority }: { block: ProjectBlock; project: Pro
 };
 
 export default function ProjectRenderer({ project }: { project: Project }) {
+  const images = useMemo(() => previewImages(project), [project]);
+  const [activeImageIndex, setActiveImageIndex] = useState<number | null>(null);
+  const activeImage = activeImageIndex === null ? null : images[activeImageIndex];
+
+  const closeLightbox = useCallback(() => setActiveImageIndex(null), []);
+  const moveLightbox = useCallback((direction: -1 | 1) => {
+    setActiveImageIndex((current) => {
+      if (current === null || images.length < 2) return current;
+      return (current + direction + images.length) % images.length;
+    });
+  }, [images.length]);
+
+  const openLightbox = useCallback((url: string) => {
+    const index = images.findIndex((image) => image.url === url);
+    if (index >= 0) setActiveImageIndex(index);
+  }, [images]);
+
+  useEffect(() => {
+    if (activeImageIndex === null) return undefined;
+
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') closeLightbox();
+      if (event.key === 'ArrowLeft') moveLightbox(-1);
+      if (event.key === 'ArrowRight') moveLightbox(1);
+    };
+    window.addEventListener('keydown', onKeyDown);
+
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      window.removeEventListener('keydown', onKeyDown);
+    };
+  }, [activeImageIndex, closeLightbox, moveLightbox]);
+
   if (project.blocks.length === 0) {
     return (
       <div className="grid min-h-[45vh] place-items-center bg-white px-6 text-center text-neutral-500 dark:bg-[#050505] dark:text-neutral-400">
@@ -175,10 +310,70 @@ export default function ProjectRenderer({ project }: { project: Project }) {
   }
 
   return (
-    <div>
-      {[...project.blocks].sort((a, b) => a.sortOrder - b.sortOrder).map((block, index) => (
-        <Block key={block.id} block={block} project={project} priority={index === 0} />
-      ))}
-    </div>
+    <>
+      <div>
+        {[...project.blocks].sort((a, b) => a.sortOrder - b.sortOrder).map((block, index) => (
+          <Block
+            key={block.id}
+            block={block}
+            project={project}
+            priority={index === 0}
+            onImageOpen={openLightbox}
+          />
+        ))}
+      </div>
+
+      {activeImage && activeImageIndex !== null && (
+        <div
+          className="fixed inset-0 z-[200] flex items-center justify-center bg-black/95 p-3 text-white md:p-8"
+          role="dialog"
+          aria-modal="true"
+          aria-label="Enlarged project image"
+          onClick={closeLightbox}
+        >
+          {images.length > 1 && (
+            <>
+              <button
+                type="button"
+                className="absolute left-3 top-1/2 z-10 grid h-12 w-12 -translate-y-1/2 place-items-center rounded-full border border-white/40 bg-black/45 transition-colors hover:bg-white hover:text-black focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white md:left-8"
+                onClick={(event) => {
+                  event.stopPropagation();
+                  moveLightbox(-1);
+                }}
+                aria-label="Previous image"
+              >
+                <ChevronLeft size={24} aria-hidden="true" />
+              </button>
+              <button
+                type="button"
+                className="absolute right-3 top-1/2 z-10 grid h-12 w-12 -translate-y-1/2 place-items-center rounded-full border border-white/40 bg-black/45 transition-colors hover:bg-white hover:text-black focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white md:right-8"
+                onClick={(event) => {
+                  event.stopPropagation();
+                  moveLightbox(1);
+                }}
+                aria-label="Next image"
+              >
+                <ChevronRight size={24} aria-hidden="true" />
+              </button>
+            </>
+          )}
+
+          <figure
+            className="flex max-h-full max-w-full flex-col items-center gap-3 px-12 md:px-16"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <img
+              src={activeImage.url}
+              alt={activeImage.alt}
+              className="max-h-[calc(100vh-7rem)] max-w-full object-contain"
+            />
+            <figcaption className="max-w-4xl text-center text-xs text-white/65 md:text-sm">
+              {activeImage.caption && <span>{activeImage.caption} · </span>}
+              {activeImageIndex + 1} / {images.length}
+            </figcaption>
+          </figure>
+        </div>
+      )}
+    </>
   );
 }

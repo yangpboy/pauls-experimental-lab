@@ -545,6 +545,7 @@ function PortfolioApp() {
   const [isProjectLiked, setIsProjectLiked] = useState(false);
   const [isProjectLikeUpdating, setIsProjectLikeUpdating] = useState(false);
   const [isProjectShareUpdating, setIsProjectShareUpdating] = useState(false);
+  const [isProjectIndexOpen, setIsProjectIndexOpen] = useState(false);
   const [isHeadModeHintVisible, setIsHeadModeHintVisible] = useState(false);
   const [isThemeModeHintVisible, setIsThemeModeHintVisible] = useState(false);
   const projectScrollRef = useRef<HTMLDivElement>(null);
@@ -761,6 +762,10 @@ function PortfolioApp() {
   }, [selectedProject]);
 
   useEffect(() => {
+    setIsProjectIndexOpen(false);
+  }, [routeProjectSlug]);
+
+  useEffect(() => {
     if (routeProjectSlug && selectedProject) {
       applyProjectSeo(selectedProject);
     } else if (!routeProjectSlug) {
@@ -807,11 +812,17 @@ function PortfolioApp() {
   };
 
   const closeProject = () => {
-    window.history.replaceState({}, '', '/');
+    if (window.history.length > 1) {
+      window.history.back();
+      return;
+    }
+
+    window.history.replaceState({}, '', '/#garage');
     setRouteProjectSlug(null);
     setSelectedProject(null);
     setProjectError(null);
     setTiniProjectView('deck');
+    setActivePage('garage');
   };
 
   const changeTiniProjectView = (view: TiniProjectView) => {
@@ -890,24 +901,34 @@ function PortfolioApp() {
 
   return (
     <div className="min-h-screen overflow-x-hidden bg-light-gray text-light-ink font-sans selection:bg-light-teal/40 dark:bg-[#111111] dark:text-white">
-      <nav className={`pointer-events-none fixed left-0 right-0 top-0 z-[120] items-center justify-between gap-4 px-5 py-3 md:px-[5vw] md:py-5 ${activePage === 'garage' && garageView === 'deck' ? 'hidden' : 'flex'}`}>
+      <nav className={`pointer-events-none fixed left-0 right-0 top-0 z-[120] items-center justify-between gap-4 px-5 py-3 md:px-[5vw] md:py-5 ${activePage === 'garage' ? 'hidden' : 'flex'}`}>
         <a
           href="/"
           onClick={(event) => { event.preventDefault(); navigateToPage('head'); }}
-          className="garage-glass pointer-events-auto max-w-[58vw] rounded-full border px-4 py-2.5 text-left font-mono text-[11px] font-black uppercase leading-none tracking-normal transition hover:border-light-coral hover:text-light-coral sm:max-w-none sm:text-sm md:whitespace-nowrap lg:text-base"
+          className="pointer-events-auto flex h-14 max-w-[64vw] items-center gap-2 transition-opacity hover:opacity-75 sm:max-w-none sm:gap-2.5"
           aria-label="Paul's Experimental Lab"
         >
-          Paul's Experimental Lab
+          <img
+            src="/icons/花1.png"
+            alt=""
+            className="h-9 w-9 shrink-0 object-contain sm:h-10 sm:w-10"
+            aria-hidden="true"
+          />
+          <img
+            src="/icons/W_ title.png"
+            alt="Paul's Experimental Lab"
+            className="h-[41px] w-auto max-w-[48vw] object-contain sm:h-12 sm:max-w-none"
+          />
         </a>
 
         <div className="pointer-events-auto relative hidden shrink-0 items-center md:flex">
-          <div className="garage-glass flex items-center gap-1.5 rounded-full border p-1.5 font-mono text-sm font-black uppercase leading-none tracking-normal lg:text-base">
+          <div className="garage-glass flex h-14 items-center gap-1.5 rounded-full border p-1.5 font-mono text-sm font-black uppercase leading-none tracking-normal lg:text-base">
             {navItems.map((item) => (
               <a
                 key={item.page}
                 href={portfolioPageHref(item.page)}
                 onClick={(event) => { event.preventDefault(); navigateToPage(item.page); }}
-                className={`rounded-full border px-4 py-2.5 no-underline transition hover:border-light-coral hover:text-light-coral ${
+                className={`flex h-10 items-center rounded-full border px-4 no-underline transition hover:border-light-coral hover:text-light-coral ${
                   activePage === item.page
                     ? 'border-light-coral bg-light-coral text-black'
                     : 'border-white/35 bg-white/5 text-white'
@@ -958,7 +979,7 @@ function PortfolioApp() {
           <button
             type="button"
             onClick={() => setIsMobileMenuOpen((open) => !open)}
-            className="garage-glass grid h-[53px] w-[53px] place-items-center rounded-full border text-white transition hover:border-light-coral hover:text-light-coral"
+            className="garage-glass grid h-14 w-14 place-items-center rounded-full border text-white transition hover:border-light-coral hover:text-light-coral"
             aria-label="Open navigation menu"
             aria-expanded={isMobileMenuOpen}
           >
@@ -1200,7 +1221,7 @@ function PortfolioApp() {
                   href="/#garage"
                   onClick={(event) => { event.preventDefault(); navigateToPage('garage'); }}
                   aria-label="Go to Garage"
-                  className="garage-glass grid h-12 w-12 place-items-center border text-white transition hover:-translate-y-1 hover:border-light-coral hover:text-light-coral md:h-14 md:w-14"
+                  className="grid h-12 w-12 place-items-center border-0 bg-transparent text-white transition hover:-translate-y-1 hover:text-light-coral md:h-14 md:w-14"
                 >
                   <ArrowDown className="h-6 w-6" />
                 </a>
@@ -1216,20 +1237,9 @@ function PortfolioApp() {
           className={`relative min-h-screen overflow-hidden ${
             garageView === 'deck'
               ? 'h-[100svh] min-h-[620px] bg-black p-0 text-white'
-              : 'bg-white px-5 pb-24 pt-28 dark:bg-[#111111] md:px-12 md:pt-36'
+              : 'bg-transparent px-4 pb-20 pt-32 sm:px-6 md:px-12 md:pt-28'
           }`}
         >
-          {garageView === 'grid' && (
-            <>
-              <div
-                aria-hidden="true"
-                className="pointer-events-none absolute inset-0 bg-cover bg-center bg-no-repeat opacity-40 grayscale mix-blend-multiply dark:opacity-20 dark:mix-blend-screen"
-                style={{ backgroundImage: "url('/garage-bg.jpg')" }}
-              />
-              <div className="pointer-events-none absolute inset-0 bg-white/72 dark:bg-[#111111]/82" aria-hidden="true" />
-            </>
-          )}
-
           <div className={`relative z-10 mx-auto ${garageView === 'deck' ? 'h-full w-full max-w-none' : 'max-w-[1480px]'}`}>
             {garageView === 'deck' && (
               <GarageDeck
@@ -1241,47 +1251,33 @@ function PortfolioApp() {
 
             <button
               type="button"
+              onClick={() => navigateToPage('head')}
+              className="garage-glass fixed left-3 top-3 z-[150] grid h-10 w-10 place-items-center rounded-full border text-white transition hover:-translate-x-0.5 hover:border-light-coral hover:text-light-coral md:left-6 md:top-5"
+              aria-label="Back to Head"
+            >
+              <ChevronLeft className="h-5 w-5" />
+            </button>
+
+            <button
+              type="button"
               onClick={() => setGarageView((current) => current === 'deck' ? 'grid' : 'deck')}
-              className={`absolute z-50 flex items-center gap-2 rounded-full border px-4 py-2 font-mono text-[10px] font-black uppercase tracking-[.12em] transition hover:-translate-y-0.5 ${
-                garageView === 'deck'
-                  ? 'garage-glass right-4 top-4 text-white hover:border-light-coral hover:text-light-coral md:right-6 md:top-5'
-                  : 'right-0 top-0 border-light-ink bg-white/90 text-light-ink hover:text-light-coral dark:border-white dark:bg-[#111111]/90 dark:text-white'
-              }`}
+              className="garage-glass fixed right-3 top-3 z-[150] flex h-10 items-center gap-2 rounded-full border px-3 font-mono text-[9px] font-black uppercase tracking-[.1em] text-white transition hover:-translate-y-0.5 hover:border-light-coral hover:text-light-coral sm:px-4 sm:text-[10px] md:right-6 md:top-5"
               aria-label={garageView === 'deck' ? `Switch to ${text.gridView}` : `Switch to ${text.deckView}`}
             >
               {garageView === 'deck' ? <LayoutGrid className="h-4 w-4" /> : <Layers3 className="h-4 w-4" />}
               {garageView === 'deck' ? text.gridView : text.deckView}
             </button>
 
-            {garageView === 'grid' && (
-              <header className="pb-8 pr-32 pt-2 md:pb-10">
-                <p className="font-mono text-[10px] font-black uppercase tracking-[0.28em] text-light-ink/55 dark:text-white/55">
-                  {text.garageSubtitle}
-                </p>
-              </header>
-            )}
-
-            <div className={`z-40 flex gap-2 backdrop-blur-md ${
-              garageView === 'deck'
-                ? 'garage-glass absolute left-4 right-4 top-[4.75rem] flex-row items-center overflow-hidden rounded-full border p-1.5 md:left-1/2 md:right-auto md:top-5 md:w-[min(48vw,640px)] md:-translate-x-1/2'
-                : 'flex-col border-y border-light-ink bg-white/70 py-5 dark:border-white dark:bg-[#111111]/70 md:flex-row md:items-center md:justify-between'
-            }`}>
-              <p className={`font-mono text-xs font-black uppercase tracking-[0.22em] ${garageView === 'deck' ? 'sr-only' : 'text-light-ink dark:text-white'}`}>
-                {text.categories}
-              </p>
-              <div className={`flex gap-1.5 ${garageView === 'deck' ? 'w-full flex-nowrap overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden' : 'flex-wrap md:justify-end'}`}>
+            <div className="garage-glass fixed left-1/2 top-[3.75rem] z-[140] flex h-10 w-fit max-w-[calc(100vw-1.5rem)] -translate-x-1/2 items-center overflow-x-auto rounded-full border p-1 backdrop-blur-md [scrollbar-width:none] [&::-webkit-scrollbar]:hidden md:top-5 md:max-w-[calc(100vw-12rem)]">
+              <div className="flex w-max flex-nowrap gap-1.5">
                 {garageCategories.map((category) => (
                   <button
                     key={category}
                     onClick={() => setActiveGarageCategory(category)}
-                    className={`shrink-0 rounded-full border px-4 py-1.5 font-mono text-xs font-black uppercase leading-none transition hover:-translate-y-0.5 ${
-                      garageView === 'deck'
-                        ? activeGarageCategory === category
-                          ? 'border-light-coral bg-light-coral text-black'
-                          : 'border-white/35 bg-white/5 text-white hover:border-light-coral hover:text-light-coral'
-                        : activeGarageCategory === category
-                          ? 'border-light-ink bg-light-ink text-white dark:border-white dark:bg-white dark:text-light-ink'
-                          : 'border-light-ink bg-white/90 text-light-ink hover:text-light-coral dark:border-white dark:bg-[#111111]/90 dark:text-white'
+                    className={`h-8 shrink-0 rounded-full border px-4 font-mono text-xs font-black uppercase leading-none transition hover:-translate-y-0.5 ${
+                      activeGarageCategory === category
+                        ? 'border-light-coral bg-light-coral text-black'
+                        : 'border-white/35 bg-white/5 text-white hover:border-light-coral hover:text-light-coral'
                     }`}
                   >
                     {category}
@@ -1291,29 +1287,29 @@ function PortfolioApp() {
             </div>
 
             {garageView === 'deck' ? null : (
-              <div className="grid grid-cols-1 border-l border-t border-light-ink dark:border-white sm:grid-cols-2 lg:grid-cols-3">
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:gap-6 lg:grid-cols-3">
               {projectsLoading && (
-                <div className="col-span-full grid min-h-72 place-items-center border-b border-r border-light-ink bg-white/90 p-10 dark:border-white dark:bg-[#111111]/90">
+                <div className="col-span-full grid min-h-72 place-items-center rounded-3xl border border-light-ink/25 bg-transparent p-10 dark:border-white/25">
                   <div className="flex items-center gap-3 font-mono text-xs font-bold uppercase tracking-widest text-light-ink/60 dark:text-white/60">
                     <span className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" /> Loading projects
                   </div>
                 </div>
               )}
               {!projectsLoading && projectsError && (
-                <div className="col-span-full border-b border-r border-light-ink bg-white/90 p-10 text-center dark:border-white dark:bg-[#111111]/90">
+                <div className="col-span-full rounded-3xl border border-light-ink/25 bg-transparent p-10 text-center dark:border-white/25">
                   <p className="font-mono text-xs font-bold uppercase tracking-widest text-light-coral">Projects unavailable</p>
                   <p className="mx-auto mt-3 max-w-xl text-sm text-light-ink/65 dark:text-white/65">{projectsError}</p>
                 </div>
               )}
               {!projectsLoading && !projectsError && filteredGaragePosts.length === 0 && (
-                <div className="col-span-full grid min-h-72 place-items-center border-b border-r border-light-ink bg-white/90 p-10 text-center text-sm text-light-ink/60 dark:border-white dark:bg-[#111111]/90 dark:text-white/60">
+                <div className="col-span-full grid min-h-72 place-items-center rounded-3xl border border-light-ink/25 bg-transparent p-10 text-center text-sm text-light-ink/60 dark:border-white/25 dark:text-white/60">
                   No published projects in this category yet.
                 </div>
               )}
               {SHOW_SKETCHBOOK && (activeGarageCategory === 'All' || activeGarageCategory === 'Sketch') && (
                 <button
                   onClick={() => navigateToPage('sketchbook')}
-                  className="group flex min-h-[560px] flex-col border-b border-r border-light-ink bg-white/90 p-7 text-left backdrop-blur-[1px] transition hover:bg-white dark:border-white dark:bg-[#111111]/90 dark:hover:bg-[#111111] md:min-h-[620px] md:p-9"
+                  className="group flex min-h-[500px] flex-col rounded-3xl border border-light-ink/25 bg-transparent p-5 text-left transition hover:border-light-coral dark:border-white/25 md:min-h-[560px] md:p-7"
                 >
                   <div className="mb-6 flex items-center justify-between gap-4 font-mono text-xs font-medium text-light-ink/70 dark:text-white/70">
                     <span>Sketch 01</span>
@@ -1322,7 +1318,7 @@ function PortfolioApp() {
                     </span>
                   </div>
 
-                  <div className="aspect-[1.35] w-full overflow-hidden bg-light-gray">
+                  <div className="aspect-[1.35] w-full overflow-hidden rounded-2xl bg-light-gray">
                     <img
                       src={SKETCHBOOK_PAGES[0].image}
                       alt={text.sketchTitle}
@@ -1350,7 +1346,7 @@ function PortfolioApp() {
                   key={post.id}
                   href={`/projects/${encodeURIComponent(post.slug)}`}
                   onClick={(event) => { event.preventDefault(); openGaragePost(post); }}
-                  className="group flex min-h-[560px] flex-col border-b border-r border-light-ink bg-white/90 p-7 text-left backdrop-blur-[1px] transition hover:bg-white dark:border-white dark:bg-[#111111]/90 dark:hover:bg-[#111111] md:min-h-[620px] md:p-9"
+                  className="group flex min-h-[500px] flex-col rounded-3xl border border-light-ink/25 bg-transparent p-5 text-left transition hover:border-light-coral dark:border-white/25 md:min-h-[560px] md:p-7"
                 >
                   <div className="mb-6 flex items-center justify-between gap-4 font-mono text-xs font-medium text-light-ink/70 dark:text-white/70">
                     <span>{post.projectDate}</span>
@@ -1359,7 +1355,7 @@ function PortfolioApp() {
                     </span>
                   </div>
 
-                  <div className="aspect-[1.35] w-full overflow-hidden bg-light-gray">
+                  <div className="aspect-[1.35] w-full overflow-hidden rounded-2xl bg-light-gray">
                     <img
                       src={post.coverImageUrl}
                       alt={post.title}
@@ -1409,71 +1405,99 @@ function PortfolioApp() {
             className="fixed inset-0 z-[200] flex items-center justify-center bg-white transition-all duration-300 dark:bg-[#050505]"
             onClick={closeProject}
           >
-            <div className="fixed right-1 top-1/2 z-[230] flex -translate-y-1/2 origin-right scale-[.82] flex-col items-center gap-2 md:right-6 md:scale-100">
-              {selectedProject?.slug === 'dark-side-of-the-tini' && (
-                <div
-                  className="garage-glass flex w-20 flex-col items-center gap-2.5 rounded-full border border-white/45 p-[5px] text-white shadow-2xl"
-                  role="group"
-                  aria-label="Choose Dark Side of the Tini presentation"
-                  onClick={(event) => event.stopPropagation()}
-                >
-                  <button
-                    type="button"
-                    onClick={() => changeTiniProjectView('deck')}
-                    className={`flex h-[68px] w-[68px] shrink-0 items-center justify-center rounded-full border transition ${
-                      tiniProjectView === 'deck'
-                        ? 'border-light-coral bg-light-coral text-black'
-                        : 'border-white/45 bg-black/75 text-white hover:border-light-coral hover:text-light-coral'
-                    }`}
-                    aria-pressed={tiniProjectView === 'deck'}
-                    aria-label="Deck view"
-                  >
-                    <BookOpen className="h-5 w-5" />
-                    <span className="sr-only">Deck</span>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => changeTiniProjectView('web')}
-                    className={`flex h-[68px] w-[68px] shrink-0 items-center justify-center rounded-full border transition ${
-                      tiniProjectView === 'web'
-                        ? 'border-light-coral bg-light-coral text-black'
-                        : 'border-white/45 bg-black/75 text-white hover:border-light-coral hover:text-light-coral'
-                    }`}
-                    aria-pressed={tiniProjectView === 'web'}
-                    aria-label="Web view"
-                  >
-                    <LayoutGrid className="h-5 w-5" />
-                    <span className="sr-only">Web</span>
-                  </button>
-                </div>
-              )}
-              <button className="garage-glass flex h-16 w-16 shrink-0 items-center justify-center rounded-full border border-white/45 p-0 text-white transition-all hover:scale-105 hover:border-light-coral hover:text-light-coral" onClick={closeProject} aria-label="Close project">
-                <X className="h-6 w-6" />
+            <button
+              type="button"
+              className="garage-glass fixed left-3 top-3 z-[240] grid h-11 w-11 place-items-center rounded-full border border-white/45 text-white transition hover:-translate-x-0.5 hover:border-light-coral hover:text-light-coral focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-light-coral md:left-6 md:top-5"
+              onClick={(event) => {
+                event.stopPropagation();
+                closeProject();
+              }}
+              aria-label="Back to previous page"
+            >
+              <ChevronLeft className="h-5 w-5" />
+            </button>
+
+            <div
+              className="group fixed right-3 top-3 z-[230] flex origin-top-right scale-[.82] flex-col items-center gap-1.5 md:right-6 md:top-5 md:scale-100"
+              onClick={(event) => event.stopPropagation()}
+              onMouseLeave={() => setIsProjectIndexOpen(false)}
+            >
+              <button
+                type="button"
+                className={`garage-glass grid h-[51px] w-[51px] shrink-0 place-items-center rounded-full border p-0 transition-all hover:border-light-coral hover:text-light-coral focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-light-coral ${isProjectIndexOpen ? 'border-light-coral text-light-coral' : 'border-white/45 text-white'}`}
+                onClick={() => setIsProjectIndexOpen((current) => !current)}
+                aria-label="Project index and actions"
+                aria-expanded={isProjectIndexOpen}
+              >
+                <Menu className="h-5 w-5" />
               </button>
-              {selectedProject && (
-                <div className="garage-glass flex w-20 flex-col items-center gap-2.5 rounded-full border border-white/45 p-[5px]">
-                  <button
-                    className="group relative flex h-[68px] w-[68px] shrink-0 items-center justify-center rounded-full border border-white/35 bg-black/35 p-0 text-white transition-all hover:border-light-coral hover:bg-white/10 hover:text-light-coral disabled:cursor-wait disabled:opacity-60"
-                    onClick={(event) => { event.stopPropagation(); void handleGarageShare(selectedProject); }}
-                    aria-label={`Share project (${projectShares} shares)`}
-                    aria-busy={isProjectShareUpdating}
-                    disabled={isProjectShareUpdating}
+
+              <div className={`flex flex-col items-center gap-1.5 overflow-hidden transition-[max-height,opacity,transform] duration-300 ease-out md:group-hover:max-h-[360px] md:group-hover:translate-y-0 md:group-hover:opacity-100 md:group-focus-within:max-h-[360px] md:group-focus-within:translate-y-0 md:group-focus-within:opacity-100 ${
+                isProjectIndexOpen
+                  ? 'max-h-[360px] translate-y-0 opacity-100'
+                  : 'pointer-events-none max-h-0 -translate-y-2 opacity-0 md:group-hover:pointer-events-auto md:group-focus-within:pointer-events-auto'
+              }`}>
+                {selectedProject?.slug === 'dark-side-of-the-tini' && (
+                  <div
+                    className="garage-glass flex w-16 flex-col items-center gap-2 rounded-full border border-white/45 p-1 text-white shadow-2xl"
+                    role="group"
+                    aria-label="Choose Dark Side of the Tini presentation"
                   >
-                    <Share2 className="h-5 w-5" />
-                    <span className="pointer-events-none absolute -right-2 -top-2 min-w-5 rounded-full bg-light-coral px-1 py-0.5 text-center font-mono text-[9px] font-black leading-none text-white">{formatEngagementCount(projectShares)}</span>
-                  </button>
-                  <button
-                    className={`group relative flex h-[68px] w-[68px] shrink-0 items-center justify-center rounded-full border border-white/35 bg-black/35 p-0 transition-all hover:border-light-coral hover:bg-white/10 disabled:cursor-wait disabled:opacity-60 ${isProjectLiked ? 'text-light-coral' : 'text-white hover:text-light-coral'}`}
-                    onClick={(event) => { event.stopPropagation(); void handleLikeProject(); }}
-                    aria-label={`${isProjectLiked ? 'Unlike' : 'Like'} project (${projectLikes} likes)`}
-                    aria-busy={isProjectLikeUpdating}
-                    disabled={isProjectLikeUpdating}
-                  >
-                    <Heart className="h-5 w-5" fill={isProjectLiked ? 'currentColor' : 'none'} />
-                    <span className="pointer-events-none absolute -right-2 -top-2 min-w-5 rounded-full bg-light-coral px-1 py-0.5 text-center font-mono text-[9px] font-black leading-none text-white">{formatEngagementCount(projectLikes)}</span>
-                  </button>
-                </div>
-              )}
+                    <button
+                      type="button"
+                      onClick={() => changeTiniProjectView('deck')}
+                      className={`flex h-[54px] w-[54px] shrink-0 items-center justify-center rounded-full border transition ${
+                        tiniProjectView === 'deck'
+                          ? 'border-light-coral bg-light-coral text-black'
+                          : 'border-white/45 bg-black/75 text-white hover:border-light-coral hover:text-light-coral'
+                      }`}
+                      aria-pressed={tiniProjectView === 'deck'}
+                      aria-label="Deck view"
+                    >
+                      <BookOpen className="h-4 w-4" />
+                      <span className="sr-only">Deck</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => changeTiniProjectView('web')}
+                      className={`flex h-[54px] w-[54px] shrink-0 items-center justify-center rounded-full border transition ${
+                        tiniProjectView === 'web'
+                          ? 'border-light-coral bg-light-coral text-black'
+                          : 'border-white/45 bg-black/75 text-white hover:border-light-coral hover:text-light-coral'
+                      }`}
+                      aria-pressed={tiniProjectView === 'web'}
+                      aria-label="Web view"
+                    >
+                      <LayoutGrid className="h-4 w-4" />
+                      <span className="sr-only">Web</span>
+                    </button>
+                  </div>
+                )}
+                {selectedProject && (
+                  <div className="garage-glass flex w-16 flex-col items-center gap-2 rounded-full border border-white/45 p-1">
+                    <button
+                      className="group relative flex h-[54px] w-[54px] shrink-0 items-center justify-center rounded-full border border-white/35 bg-black/35 p-0 text-white transition-all hover:border-light-coral hover:bg-white/10 hover:text-light-coral disabled:cursor-wait disabled:opacity-60"
+                      onClick={() => { void handleGarageShare(selectedProject); }}
+                      aria-label={`Share project (${projectShares} shares)`}
+                      aria-busy={isProjectShareUpdating}
+                      disabled={isProjectShareUpdating}
+                    >
+                      <Share2 className="h-4 w-4" />
+                      <span className="pointer-events-none absolute -right-1.5 -top-1.5 min-w-4 rounded-full bg-light-coral px-0.5 py-0.5 text-center font-mono text-[8px] font-black leading-none text-white">{formatEngagementCount(projectShares)}</span>
+                    </button>
+                    <button
+                      className={`group relative flex h-[54px] w-[54px] shrink-0 items-center justify-center rounded-full border border-white/35 bg-black/35 p-0 transition-all hover:border-light-coral hover:bg-white/10 disabled:cursor-wait disabled:opacity-60 ${isProjectLiked ? 'text-light-coral' : 'text-white hover:text-light-coral'}`}
+                      onClick={() => { void handleLikeProject(); }}
+                      aria-label={`${isProjectLiked ? 'Unlike' : 'Like'} project (${projectLikes} likes)`}
+                      aria-busy={isProjectLikeUpdating}
+                      disabled={isProjectLikeUpdating}
+                    >
+                      <Heart className="h-4 w-4" fill={isProjectLiked ? 'currentColor' : 'none'} />
+                      <span className="pointer-events-none absolute -right-1.5 -top-1.5 min-w-4 rounded-full bg-light-coral px-0.5 py-0.5 text-center font-mono text-[8px] font-black leading-none text-white">{formatEngagementCount(projectLikes)}</span>
+                    </button>
+                  </div>
+                )}
+              </div>
             </div>
 
             <motion.div
