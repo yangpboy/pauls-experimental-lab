@@ -8,6 +8,7 @@ import { lazy, Suspense, useRef, useEffect, useState, useMemo } from 'react';
 import { X, Share2, ArrowUpRight, Heart, ChevronLeft, ChevronRight, BookOpen, ArrowDown, Menu, Settings, LockKeyhole, LayoutGrid, Layers3 } from 'lucide-react';
 import ProjectRenderer from './components/ProjectRenderer';
 import TiniWebCaseStudy from './components/TiniWebCaseStudy';
+import GeologicAssembliesExperience from './components/GeologicAssembliesExperience';
 import GarageDeck from './components/GarageDeck';
 import AdminApp from './admin/AdminApp';
 import AdminLogin from './admin/AdminLogin';
@@ -1520,9 +1521,11 @@ function PortfolioApp() {
                 </div>
               )}
               {!projectLoading && selectedProject && (
-                selectedProject.slug === 'dark-side-of-the-tini' && tiniProjectView === 'web'
-                  ? <TiniWebCaseStudy />
-                  : (
+                selectedProject.slug === 'geologic-assemblies'
+                  ? <GeologicAssembliesExperience />
+                  : selectedProject.slug === 'dark-side-of-the-tini' && tiniProjectView === 'web'
+                    ? <TiniWebCaseStudy />
+                    : (
                     <>
                       <ProjectRenderer project={selectedProject} />
                       <div className="relative z-30 w-full bg-white dark:bg-[#050505]">
@@ -1546,7 +1549,7 @@ function PortfolioApp() {
                         </div>
                       </div>
                     </>
-                  )
+                    )
               )}
             </motion.div>
           </motion.div>
