@@ -18,6 +18,100 @@
 }
 
 @layer components {
+  .timeline-stage {
+    --timeline-content-shift: -33px;
+    --timeline-row-gap: 16px;
+    height: clamp(540px, calc(100svh - 1rem), 700px);
+    padding-bottom: 72px;
+  }
+
+  .timeline-axis {
+    top: calc(50% + var(--timeline-content-shift));
+  }
+
+  .timeline-card {
+    top: var(--timeline-content-shift);
+    width: min(74vw, 260px);
+  }
+
+  .timeline-card-title {
+    display: -webkit-box !important;
+    overflow: hidden !important;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+  }
+
+  .timeline-card-body {
+    padding: clamp(14px, 1.8svh, 18px) !important;
+  }
+
+  @media (min-width: 640px) {
+    .timeline-stage {
+      --timeline-content-shift: -28px;
+      --timeline-row-gap: 20px;
+      height: clamp(540px, calc(100svh - 1rem), 820px);
+    }
+
+    .timeline-card {
+      width: clamp(240px, 38svh, 310px);
+    }
+  }
+
+  @media (min-width: 1024px) {
+    .timeline-stage {
+      --timeline-content-shift: -40px;
+    }
+
+    .timeline-card {
+      width: clamp(260px, 38svh, 320px);
+    }
+  }
+
+  @media (max-height: 700px) {
+    .timeline-stage {
+      --timeline-content-shift: -39px;
+      height: max(500px, calc(100svh - 0.5rem));
+      padding-bottom: 64px;
+    }
+
+    .timeline-card {
+      width: min(68vw, 235px);
+    }
+  }
+
+  @media (max-height: 520px) {
+    .timeline-stage {
+      --timeline-content-shift: -31px;
+      --timeline-row-gap: 12px;
+      height: max(360px, calc(100svh - 0.25rem));
+      padding-bottom: 36px;
+    }
+
+    .timeline-card {
+      width: min(52vw, 150px);
+    }
+
+    .timeline-card-body {
+      padding: 6px !important;
+    }
+
+    .timeline-card-title {
+      margin-bottom: 0 !important;
+      font-size: 15px !important;
+      line-height: 1 !important;
+    }
+
+    .timeline-card-summary,
+    .timeline-indicator-label {
+      display: none !important;
+    }
+
+    .timeline-indicator-shell {
+      padding-top: 6px;
+      padding-bottom: 6px;
+    }
+  }
+
   .tini-columns {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));

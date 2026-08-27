@@ -13,6 +13,7 @@ import GarageDeck from './components/GarageDeck';
 import AdminApp from './admin/AdminApp';
 import AdminLogin from './admin/AdminLogin';
 import { CmsApiError, projectsApi } from './lib/api';
+import { getProjectCreativeFields } from './lib/projectCreativeFields';
 import { applyHomeSeo, applyProjectSeo } from './lib/seo';
 import type { Project, ProjectSummary } from './types/cms';
 
@@ -21,17 +22,24 @@ const LowPerformanceHead = lazy(() => import('./components/LowPerformanceHead'))
 
 const SHOW_SKETCHBOOK = false;
 
-const parseProjectDate = (dateStr: string) => {
-  if (!dateStr) return 0;
-  const firstPart = dateStr.split(/[-~]/)[0].trim();
-  const parts = firstPart.split(/[./]/);
+const parseProjectMonth = (datePart: string) => {
+  const parts = datePart.trim().split(/[./]/);
   if (parts.length === 2) {
     const month = Number.parseInt(parts[0], 10);
     const year = Number.parseInt(parts[1], 10);
     if (Number.isFinite(month) && Number.isFinite(year)) return new Date(year, month - 1).getTime();
   }
-  const date = new Date(firstPart);
+  const date = new Date(datePart.trim());
   return Number.isNaN(date.getTime()) ? 0 : date.getTime();
+};
+
+const parseProjectDateRange = (dateStr: string) => {
+  if (!dateStr) return { start: 0, end: 0 };
+
+  const dateParts = dateStr.split(/[~–—]/).map((part) => part.trim()).filter(Boolean);
+  const start = parseProjectMonth(dateParts[0] ?? '');
+  const end = parseProjectMonth(dateParts[dateParts.length - 1] ?? '') || start;
+  return { start, end };
 };
 
 const projectSlugFromPath = () => {
@@ -129,19 +137,65 @@ const FadeIn = ({ children, delay = 0, direction = 'up', className = '' }: { chi
 const POPage = ({ 
   theme,
   projects,
+  onProjectOpen,
 }: { 
   theme: 'dark' | 'light';
   projects: ProjectSummary[];
+  onProjectOpen: (project: ProjectSummary) => void;
 }) => {
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const isDragging = useRef(false);
+  const draggedDistance = useRef(0);
+  const suppressCardClick = useRef(false);
   const startX = useRef(0);
   const scrollLeft = useRef(0);
+  const [timelineScroll, setTimelineScroll] = useState({ progress: 0, visibleRatio: 1 });
 
   const timelinePosts = useMemo(
-    () => [...projects].sort((a, b) => parseProjectDate(a.projectDate) - parseProjectDate(b.projectDate)),
+    () => [...projects].sort((a, b) => {
+      const aRange = parseProjectDateRange(a.projectDate);
+      const bRange = parseProjectDateRange(b.projectDate);
+      return (aRange.end - bRange.end) || (aRange.start - bRange.start);
+    }),
     [projects]
   );
+
+  const updateTimelineScroll = () => {
+    const container = scrollContainerRef.current;
+    if (!container) return;
+
+    const maxScroll = Math.max(0, container.scrollWidth - container.clientWidth);
+    setTimelineScroll({
+      progress: maxScroll > 0 ? container.scrollLeft / maxScroll : 0,
+      visibleRatio: container.scrollWidth > 0
+        ? Math.min(1, container.clientWidth / container.scrollWidth)
+        : 1,
+    });
+  };
+
+  useEffect(() => {
+    const container = scrollContainerRef.current;
+    if (!container) return;
+
+    const frame = window.requestAnimationFrame(updateTimelineScroll);
+    const resizeObserver = new ResizeObserver(updateTimelineScroll);
+    resizeObserver.observe(container);
+    const content = container.firstElementChild;
+    if (content) resizeObserver.observe(content);
+
+    return () => {
+      window.cancelAnimationFrame(frame);
+      resizeObserver.disconnect();
+    };
+  }, [timelinePosts.length]);
+
+  const finishTimelineDrag = (event: React.PointerEvent<HTMLDivElement>) => {
+    const container = scrollContainerRef.current;
+    if (container?.hasPointerCapture(event.pointerId)) {
+      container.releasePointerCapture(event.pointerId);
+    }
+    isDragging.current = false;
+  };
 
   return (
     <div className={`w-full min-h-screen relative z-10 transition-colors ${theme === 'dark' ? 'bg-[#111111] text-white' : 'bg-white text-[#333333]'}`}>
@@ -308,38 +362,53 @@ const POPage = ({
                 
                 <div 
                   ref={scrollContainerRef}
-                  className="hide-scrollbar relative overflow-x-auto overflow-y-hidden cursor-grab active:cursor-grabbing"
-                  onMouseDown={(e) => {
-                    isDragging.current = true;
-                    if (scrollContainerRef.current) {
-                      startX.current = e.pageX - scrollContainerRef.current.offsetLeft;
-                      scrollLeft.current = scrollContainerRef.current.scrollLeft;
+                  role="region"
+                  aria-label="Project timeline. Drag or swipe horizontally to explore all projects."
+                  tabIndex={0}
+                  className="hide-scrollbar relative cursor-grab touch-pan-y overflow-x-auto overflow-y-hidden overscroll-x-contain outline-none active:cursor-grabbing focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-light-coral"
+                  onScroll={updateTimelineScroll}
+                  onKeyDown={(event) => {
+                    if (!scrollContainerRef.current) return;
+                    if (event.key === 'ArrowRight') {
+                      event.preventDefault();
+                      scrollContainerRef.current.scrollBy({ left: Math.min(420, scrollContainerRef.current.clientWidth * 0.75), behavior: 'smooth' });
+                    } else if (event.key === 'ArrowLeft') {
+                      event.preventDefault();
+                      scrollContainerRef.current.scrollBy({ left: -Math.min(420, scrollContainerRef.current.clientWidth * 0.75), behavior: 'smooth' });
                     }
                   }}
-                  onMouseLeave={() => {
-                    isDragging.current = false;
+                  onPointerDown={(event) => {
+                    if (event.pointerType === 'mouse' && event.button !== 0) return;
+                    isDragging.current = true;
+                    draggedDistance.current = 0;
+                    suppressCardClick.current = false;
+                    if (scrollContainerRef.current) {
+                      startX.current = event.clientX;
+                      scrollLeft.current = scrollContainerRef.current.scrollLeft;
+                      scrollContainerRef.current.setPointerCapture(event.pointerId);
+                    }
                   }}
-                  onMouseUp={() => {
-                    isDragging.current = false;
-                  }}
-                  onMouseMove={(e) => {
+                  onPointerUp={finishTimelineDrag}
+                  onPointerCancel={finishTimelineDrag}
+                  onPointerMove={(event) => {
                     if (!isDragging.current || !scrollContainerRef.current) return;
-                    e.preventDefault();
-                    const x = e.pageX - scrollContainerRef.current.offsetLeft;
-                    const walk = (x - startX.current) * 1.5;
+                    const delta = event.clientX - startX.current;
+                    draggedDistance.current = Math.max(draggedDistance.current, Math.abs(delta));
+                    if (draggedDistance.current > 6) suppressCardClick.current = true;
+                    const walk = delta * 1.35;
                     scrollContainerRef.current.scrollLeft = scrollLeft.current - walk;
                   }}
                 >
-                  <div className="relative flex items-center min-w-max px-8 md:px-24 h-[600px] md:h-[900px] gap-12 md:gap-24">
+                  <div className="timeline-stage relative flex min-w-max items-center gap-8 px-6 sm:gap-12 sm:px-12 lg:gap-20 lg:px-20">
                     
                     {/* Central Tech Line (Horizontal) */}
-                    <div className={`absolute left-0 right-0 top-1/2 h-px -translate-y-1/2 ${theme === 'dark' ? 'bg-white/20' : 'bg-black/20'}`} />
+                    <div className={`timeline-axis absolute left-0 right-0 h-px -translate-y-1/2 ${theme === 'dark' ? 'bg-white/20' : 'bg-black/20'}`} />
                     
                     {timelinePosts.map((post, i) => {
                       const isEven = i % 2 === 0;
                       
                       return (
-                        <div key={post.id} className="relative w-[280px] md:w-[350px] h-full flex-shrink-0 group">
+                        <div key={post.id} className="timeline-card group relative h-full flex-shrink-0">
                           
                           {/* Tech Node */}
                           <div className="absolute top-1/2 left-1/2 flex flex-col items-center -translate-x-1/2 -translate-y-1/2 z-10">
@@ -347,7 +416,12 @@ const POPage = ({
                           </div>
 
                           {/* Date & Location */}
-                          <div className={`absolute left-0 w-full flex flex-col items-center z-10 transition-transform duration-500 ${isEven ? 'bottom-[calc(50%+2rem)] group-hover:-translate-y-2' : 'top-[calc(50%+2rem)] group-hover:translate-y-2'}`}>
+                          <div
+                            className={`absolute left-0 z-10 flex w-full flex-col items-center transition-transform duration-500 ${isEven ? 'group-hover:-translate-y-2' : 'group-hover:translate-y-2'}`}
+                            style={isEven
+                              ? { bottom: 'calc(50% + var(--timeline-row-gap))' }
+                              : { top: 'calc(50% + var(--timeline-row-gap))' }}
+                          >
                             <FadeIn delay={i * 0.1}>
                               <div className={`inline-flex items-center gap-3 px-4 py-2 rounded-full border ${theme === 'dark' ? 'bg-black/50 border-white/10' : 'bg-white/50 border-black/10'} backdrop-blur-sm`}>
                                 <span className="w-2 h-2 rounded-full bg-light-coral animate-pulse" />
@@ -364,10 +438,27 @@ const POPage = ({
                           </div>
                           
                           {/* Content Card */}
-                          <div className={`absolute left-0 w-full z-10 transition-transform duration-500 ${isEven ? 'top-[calc(50%+2rem)] group-hover:translate-y-2' : 'bottom-[calc(50%+2rem)] group-hover:-translate-y-2'}`}>
+                          <div
+                            className={`absolute left-0 z-10 w-full transition-transform duration-500 ${isEven ? 'group-hover:translate-y-2' : 'group-hover:-translate-y-2'}`}
+                            style={isEven
+                              ? { top: 'calc(50% + var(--timeline-row-gap))' }
+                              : { bottom: 'calc(50% + var(--timeline-row-gap))' }}
+                          >
                             <FadeIn delay={i * 0.1 + 0.1}>
-                              <div 
-                                className={`overflow-hidden rounded-2xl border shadow-lg transition-all duration-300 ${theme === 'dark' ? 'bg-[#111] border-white/10 shadow-black/50' : 'bg-white border-black/10 shadow-black/5'}`}
+                              <motion.a
+                                href={`/projects/${encodeURIComponent(post.slug)}`}
+                                layoutId={`about-project-card-${post.slug}`}
+                                aria-label={`Open ${post.title}`}
+                                onClick={(event) => {
+                                  event.preventDefault();
+                                  if (suppressCardClick.current) {
+                                    suppressCardClick.current = false;
+                                    return;
+                                  }
+                                  onProjectOpen(post);
+                                }}
+                                className={`block overflow-hidden rounded-2xl border shadow-lg transition-[border-color,box-shadow] duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-light-coral focus-visible:ring-offset-4 ${theme === 'dark' ? 'bg-[#111] border-white/10 shadow-black/50 focus-visible:ring-offset-[#111]' : 'bg-white border-black/10 shadow-black/5 focus-visible:ring-offset-white'}`}
+                                transition={{ layout: { type: 'spring', stiffness: 240, damping: 28, mass: 0.85 } }}
                                >
                                 <div className="relative w-full aspect-video overflow-hidden border-b border-inherit">
                                   <img 
@@ -377,23 +468,50 @@ const POPage = ({
                                     className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
                                   />
                                   <div className="absolute top-3 right-3 px-2 py-1 text-[10px] font-mono font-bold uppercase tracking-widest bg-black/70 text-white rounded backdrop-blur-md">
-                                    {post.category || 'PROJECT'}
+                                    {getProjectCreativeFields(post).join(' · ')}
                                   </div>
                                 </div>
-                                <div className="p-5 md:p-6">
-                                  <h3 className={`font-mono text-xl md:text-2xl font-black mb-2 uppercase tracking-normal ${theme === 'dark' ? 'text-white' : 'text-black'}`}>{post.title}</h3>
-                                  <p className={`text-sm leading-relaxed line-clamp-2 ${theme === 'dark' ? 'text-gray-400' : 'text-gray-600'}`}>{post.summary}</p>
+                                <div className="timeline-card-body p-5 md:p-6">
+                                  <h3 className={`timeline-card-title font-mono text-xl md:text-2xl font-black mb-2 uppercase tracking-normal ${theme === 'dark' ? 'text-white' : 'text-black'}`}>{post.title}</h3>
+                                  <p className={`timeline-card-summary text-sm leading-relaxed line-clamp-2 ${theme === 'dark' ? 'text-gray-400' : 'text-gray-600'}`}>{post.summary}</p>
                                 </div>
-                              </div>
+                              </motion.a>
                             </FadeIn>
                           </div>
 
                           {/* Connecting Line (Node to Card/Date) */}
-                          <div className={`absolute left-1/2 w-px -translate-x-1/2 z-0 ${theme === 'dark' ? 'bg-white/20' : 'bg-black/20'} ${isEven ? 'top-1/2 bottom-[calc(50%+2rem)]' : 'bottom-1/2 top-[calc(50%+2rem)]'}`} />
-                          <div className={`absolute left-1/2 w-px -translate-x-1/2 z-0 ${theme === 'dark' ? 'bg-white/20' : 'bg-black/20'} ${isEven ? 'bottom-1/2 top-[calc(50%+2rem)]' : 'top-1/2 bottom-[calc(50%+2rem)]'}`} />
+                          <div
+                            className={`absolute left-1/2 z-0 w-px -translate-x-1/2 ${theme === 'dark' ? 'bg-white/20' : 'bg-black/20'}`}
+                            style={{ top: 'calc(50% - var(--timeline-row-gap))', bottom: '50%' }}
+                          />
+                          <div
+                            className={`absolute left-1/2 z-0 w-px -translate-x-1/2 ${theme === 'dark' ? 'bg-white/20' : 'bg-black/20'}`}
+                            style={{ top: '50%', bottom: 'calc(50% - var(--timeline-row-gap))' }}
+                          />
                         </div>
                       );
                     })}
+                  </div>
+                </div>
+
+                <div className="pointer-events-none absolute inset-x-0 bottom-3 z-30 px-4 sm:bottom-4 md:bottom-5" aria-hidden="true">
+                  <div className={`timeline-indicator-shell mx-auto w-full max-w-[720px] rounded-2xl px-3 py-2.5 backdrop-blur-md sm:w-[76vw] sm:px-4 ${theme === 'dark' ? 'bg-[#111]/82' : 'bg-white/82'}`}>
+                    <div className="flex items-center gap-3 sm:gap-4">
+                      <ChevronLeft className={`h-4 w-4 shrink-0 ${theme === 'dark' ? 'text-white/45' : 'text-black/45'}`} />
+                      <div className={`relative h-1.5 flex-1 overflow-hidden rounded-full ${theme === 'dark' ? 'bg-white/15' : 'bg-black/15'}`}>
+                        <div
+                          className="absolute inset-y-0 rounded-full bg-light-coral shadow-[0_0_14px_rgba(233,93,80,.42)]"
+                          style={{
+                            left: `${timelineScroll.progress * (1 - Math.max(0.12, timelineScroll.visibleRatio)) * 100}%`,
+                            width: `${Math.max(12, timelineScroll.visibleRatio * 100)}%`,
+                          }}
+                        />
+                      </div>
+                      <ChevronRight className={`h-4 w-4 shrink-0 ${theme === 'dark' ? 'text-white/45' : 'text-black/45'}`} />
+                    </div>
+                    <p className={`timeline-indicator-label mt-2 text-center font-mono text-[9px] font-bold uppercase tracking-[0.16em] sm:text-[10px] sm:tracking-[0.18em] ${theme === 'dark' ? 'text-white/45' : 'text-black/45'}`}>
+                      Drag or swipe to explore
+                    </p>
                   </div>
                 </div>
               </div>
@@ -547,9 +665,11 @@ function PortfolioApp() {
   const [isProjectLikeUpdating, setIsProjectLikeUpdating] = useState(false);
   const [isProjectShareUpdating, setIsProjectShareUpdating] = useState(false);
   const [isProjectIndexOpen, setIsProjectIndexOpen] = useState(false);
+  const [projectTransitionSlug, setProjectTransitionSlug] = useState<string | null>(null);
   const [isHeadModeHintVisible, setIsHeadModeHintVisible] = useState(false);
   const [isThemeModeHintVisible, setIsThemeModeHintVisible] = useState(false);
   const projectScrollRef = useRef<HTMLDivElement>(null);
+  const pageScrollPositionRef = useRef(0);
 
   const theme = colorMode;
   const themeToggleIcon = colorMode === 'light' ? '/icons/B_ dark.png' : '/icons/W_ light.png';
@@ -707,8 +827,14 @@ function PortfolioApp() {
   }, []);
 
   useEffect(() => {
-    const onPopState = () => {
+    const onPopState = (event: PopStateEvent) => {
       const slug = projectSlugFromPath();
+      if (!slug) {
+        const savedScrollY = typeof event.state?.portfolioScrollY === 'number'
+          ? event.state.portfolioScrollY
+          : pageScrollPositionRef.current;
+        window.scrollTo({ top: savedScrollY, left: 0, behavior: 'instant' });
+      }
       setRouteProjectSlug(slug);
       setTiniProjectView(slug === 'dark-side-of-the-tini' ? tiniProjectViewFromLocation() : 'deck');
       if (slug) {
@@ -792,7 +918,7 @@ function PortfolioApp() {
     });
   };
 
-  const openGaragePost = (post: ProjectSummary) => {
+  const openGaragePost = (post: ProjectSummary, origin: 'about' | 'garage' = 'garage') => {
     try {
       const storedData = localStorage.getItem(`garage_post_${post.id}`);
       const parsed = storedData ? JSON.parse(storedData) : {};
@@ -804,6 +930,13 @@ function PortfolioApp() {
     setProjectLikes(post.likesCount);
     setProjectShares(post.sharesCount);
     setTiniProjectView('deck');
+    setProjectTransitionSlug(origin === 'about' ? post.slug : null);
+    pageScrollPositionRef.current = window.scrollY;
+    window.history.replaceState(
+      { ...(window.history.state ?? {}), portfolioScrollY: pageScrollPositionRef.current },
+      '',
+      `${window.location.pathname}${window.location.search}${window.location.hash}`,
+    );
 
     window.history.pushState({ projectModal: true }, '', `/projects/${encodeURIComponent(post.slug)}`);
     setSelectedProject(null);
@@ -824,6 +957,7 @@ function PortfolioApp() {
     setProjectError(null);
     setTiniProjectView('deck');
     setActivePage('garage');
+    window.scrollTo({ top: pageScrollPositionRef.current, left: 0, behavior: 'instant' });
   };
 
   const changeTiniProjectView = (view: TiniProjectView) => {
@@ -1387,7 +1521,7 @@ function PortfolioApp() {
 
       {activePage === 'about' && (
         <section id="about" className="min-h-screen bg-white pt-20 transition-colors dark:bg-[#111111] md:pt-0">
-          <POPage theme={theme} projects={projects} />
+          <POPage theme={theme} projects={projects} onProjectOpen={(project) => openGaragePost(project, 'about')} />
         </section>
       )}
 
@@ -1397,7 +1531,7 @@ function PortfolioApp() {
         </div>
       )}
       {/* Project route / modal */}
-      <AnimatePresence>
+      <AnimatePresence onExitComplete={() => setProjectTransitionSlug(null)}>
         {routeProjectSlug && (
           <motion.div
             initial={{ opacity: 0 }}
@@ -1503,10 +1637,15 @@ function PortfolioApp() {
 
             <motion.div
               ref={projectScrollRef}
-              initial={{ y: 40, opacity: 0 }}
-              animate={{ y: 0, opacity: 1 }}
-              exit={{ y: 40, opacity: 0 }}
-              transition={{ type: 'spring', damping: 25, stiffness: 200 }}
+              layoutId={projectTransitionSlug === routeProjectSlug ? `about-project-card-${routeProjectSlug}` : undefined}
+              initial={projectTransitionSlug === routeProjectSlug ? { borderRadius: 16 } : { y: 40, opacity: 0 }}
+              animate={{ y: 0, opacity: 1, borderRadius: 0 }}
+              exit={projectTransitionSlug === routeProjectSlug ? { borderRadius: 16 } : { y: 40, opacity: 0 }}
+              transition={{
+                layout: { type: 'spring', stiffness: 240, damping: 28, mass: 0.85 },
+                opacity: { duration: 0.24 },
+                y: { type: 'spring', damping: 25, stiffness: 200 },
+              }}
               className="hide-scrollbar relative h-full w-full overflow-y-auto overscroll-none bg-white transition-all duration-300 dark:bg-[#050505]"
               onClick={(event) => event.stopPropagation()}
             >
