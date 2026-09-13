@@ -10,11 +10,13 @@ import ProjectRenderer from './components/ProjectRenderer';
 import TiniWebCaseStudy from './components/TiniWebCaseStudy';
 import GeologicAssembliesExperience from './components/GeologicAssembliesExperience';
 import GarageDeck from './components/GarageDeck';
+import Explo11Film from './components/Explo11Film';
+import Explo11Index from './components/Explo11Index';
 import AdminApp from './admin/AdminApp';
 import AdminLogin from './admin/AdminLogin';
 import { CmsApiError, projectsApi } from './lib/api';
 import { getProjectCreativeFields } from './lib/projectCreativeFields';
-import { applyHomeSeo, applyProjectSeo } from './lib/seo';
+import { applyHomeSeo, applyProjectSeo, getProjectSeoDescription } from './lib/seo';
 import type { Project, ProjectSummary } from './types/cms';
 
 const PlasterModel3D = lazy(() => import('./components/PlasterModel3D'));
@@ -1666,13 +1668,55 @@ function PortfolioApp() {
                     ? <TiniWebCaseStudy />
                     : (
                     <>
-                      <ProjectRenderer project={selectedProject} />
-                      <div className="relative z-30 w-full bg-white dark:bg-[#050505]">
+                      {selectedProject.slug === 'explo-11' && <Explo11Index />}
+                      <ProjectRenderer
+                        project={selectedProject}
+                        sectionIdForGalleryImage={selectedProject.slug === 'explo-11'
+                          ? (_image, index) => `explo11-chapter-${index + 1}`
+                          : undefined}
+                        beforeBlock={selectedProject.slug === 'explo-11'
+                          ? (block) => block.type === 'text' ? (
+                            <>
+                              <div className="bg-white px-6 pb-1 pt-14 dark:bg-[#050505] md:px-12 md:pt-20">
+                                <div className="mx-auto max-w-4xl">
+                                  <p className="font-mono text-xs font-bold uppercase tracking-[0.24em] text-light-coral">Field film · 05:18</p>
+                                </div>
+                              </div>
+                              <Explo11Film />
+                            </>
+                          ) : null
+                          : undefined}
+                        shouldRenderBlock={selectedProject.slug === 'explo-11'
+                          ? (block) => block.type !== 'text'
+                          : undefined}
+                      />
+                      <div id={selectedProject.slug === 'explo-11' ? 'explo11-project-info' : undefined} className="relative z-30 w-full scroll-mt-4 bg-white dark:bg-[#050505]">
                         <div className="mx-auto grid max-w-6xl gap-12 p-6 md:p-24 lg:grid-cols-3">
                           <div className="lg:col-span-2">
                             <p className="font-mono text-xs font-bold uppercase tracking-[0.2em] text-light-coral">{selectedProject.category}</p>
                             <h1 className="mt-4 text-4xl font-semibold leading-tight text-neutral-900 dark:text-white md:text-6xl">{selectedProject.title}</h1>
-                            <p className="mt-6 text-xl font-light leading-relaxed text-neutral-700 dark:text-neutral-300 md:text-2xl">{selectedProject.summary}</p>
+                            {selectedProject.slug === 'explo-11' && (
+                              <h2 className="mt-7 font-mono text-xs font-bold uppercase tracking-[0.2em] text-neutral-400 dark:text-neutral-500">
+                                Project overview
+                              </h2>
+                            )}
+                            <p className={`${selectedProject.slug === 'explo-11' ? 'mt-3' : 'mt-6'} text-xl font-light leading-relaxed text-neutral-700 dark:text-neutral-300 md:text-2xl`}>{getProjectSeoDescription(selectedProject)}</p>
+                            {selectedProject.slug === 'explo-11' && (
+                              <dl className="mt-8 grid gap-px overflow-hidden rounded-2xl border border-neutral-200 bg-neutral-200 text-sm dark:border-neutral-800 dark:bg-neutral-800 sm:grid-cols-3">
+                                <div className="bg-white p-5 dark:bg-[#050505]">
+                                  <dt className="font-mono text-[10px] font-bold uppercase tracking-[0.16em] text-light-coral">Design focus</dt>
+                                  <dd className="mt-2 leading-6 text-neutral-700 dark:text-neutral-300">Independent mobility and play for children with limited mobility.</dd>
+                                </div>
+                                <div className="bg-white p-5 dark:bg-[#050505]">
+                                  <dt className="font-mono text-[10px] font-bold uppercase tracking-[0.16em] text-light-coral">Research</dt>
+                                  <dd className="mt-2 leading-6 text-neutral-700 dark:text-neutral-300">Occupational therapy interviews, task planning, prototyping, and testing.</dd>
+                                </div>
+                                <div className="bg-white p-5 dark:bg-[#050505]">
+                                  <dt className="font-mono text-[10px] font-bold uppercase tracking-[0.16em] text-light-coral">Field film</dt>
+                                  <dd className="mt-2 leading-6 text-neutral-700 dark:text-neutral-300">5 min 18 sec · Mandarin audio with time-synchronised English CC.</dd>
+                                </div>
+                              </dl>
+                            )}
                           </div>
                           <div className="space-y-8 rounded-3xl border border-neutral-100 bg-neutral-50 p-8 dark:border-neutral-800 dark:bg-neutral-900/50">
                             <div>

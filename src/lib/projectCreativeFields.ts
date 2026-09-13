@@ -5,7 +5,7 @@ type ProjectCreativeFieldSource = Pick<ProjectSummary, 'category'> & {
 };
 
 export const getProjectCreativeFields = (project: ProjectCreativeFieldSource): string[] => {
-  const source = project.creativeFields?.length > 0
+  const source = project.creativeFields && project.creativeFields.length > 0
     ? project.creativeFields
     : project.category.split(',');
   const seen = new Set<string>();

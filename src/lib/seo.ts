@@ -4,6 +4,117 @@ const SITE_URL = 'https://paul-lab.com';
 const HOME_TITLE = 'Paul Yang — Industrial Designer & Product Design Portfolio';
 const HOME_DESCRIPTION = "Industrial designer Paul Yang's portfolio featuring product design, computational design, automotive concepts, prototypes, and experimental projects.";
 const HOME_IMAGE = `${SITE_URL}/works/tini/cover.png`;
+const EXPLO11_DESCRIPTION = 'Explo.11 is an inclusive mobility concept for children with limited mobility, developed through occupational therapy research, prototyping, and testing.';
+const EXPLO11_FILM_URL = 'https://media.paul-lab.com/projects/explo-11/explo11-film.mp4?v=20260913';
+const EXPLO11_ARTICLE_URL = 'https://pr.ntnu.edu.tw/ntnunews/index.php?mode=data&id=23525';
+
+export const getProjectSeoDescription = (project: Project) => project.slug === 'explo-11'
+  ? EXPLO11_DESCRIPTION
+  : project.summary || `${project.category} project by industrial designer Paul Yang.`;
+
+export const getProjectSeoTitle = (project: Project) => project.slug === 'explo-11'
+  ? 'Explo.11 — Inclusive Mobility for Children | Paul Yang'
+  : `${project.title} — Paul Yang`;
+
+const projectCreators = (project: Project) => project.author
+  .split(',')
+  .map((name) => name.trim())
+  .filter(Boolean)
+  .map((name) => ({
+    '@type': 'Person',
+    ...(name === 'Po-Yu Yang' ? { '@id': `${SITE_URL}/#paul-yang` } : {}),
+    name,
+  }));
+
+const projectJsonLd = (project: Project, title: string, canonical: string, description: string, image: string) => {
+  const projectId = `${canonical}#project`;
+  const pageId = `${canonical}#webpage`;
+  const creators = projectCreators(project);
+  const creativeWork: Record<string, unknown> = {
+    '@type': 'CreativeWork',
+    '@id': projectId,
+    name: project.title,
+    headline: project.title,
+    description,
+    url: canonical,
+    mainEntityOfPage: { '@id': pageId },
+    image,
+    genre: project.category,
+    keywords: [...new Set([project.category, ...project.tools])],
+    datePublished: project.publishedAt ?? undefined,
+    dateModified: project.updatedAt,
+    temporalCoverage: project.projectDate || undefined,
+    locationCreated: project.location ? { '@type': 'Place', name: project.location } : undefined,
+    creator: creators,
+    author: creators,
+    inLanguage: 'en',
+  };
+
+  const graph: Record<string, unknown>[] = [
+    {
+      '@type': 'WebPage',
+      '@id': pageId,
+      url: canonical,
+      name: title,
+      description,
+      isPartOf: { '@id': `${SITE_URL}/#website` },
+      primaryImageOfPage: { '@type': 'ImageObject', url: image },
+      breadcrumb: { '@id': `${canonical}#breadcrumb` },
+      mainEntity: { '@id': projectId },
+      inLanguage: 'en',
+    },
+    {
+      '@type': 'BreadcrumbList',
+      '@id': `${canonical}#breadcrumb`,
+      itemListElement: [
+        { '@type': 'ListItem', position: 1, name: "Paul's Experimental Lab", item: `${SITE_URL}/` },
+        { '@type': 'ListItem', position: 2, name: project.title, item: canonical },
+      ],
+    },
+    creativeWork,
+  ];
+
+  if (project.slug === 'explo-11') {
+    const filmId = `${canonical}#field-film`;
+    creativeWork.about = [
+      'Inclusive mobility for children',
+      'Occupational therapy research',
+      'Assistive play and independent exploration',
+      'Product design prototyping',
+    ];
+    creativeWork.citation = EXPLO11_ARTICLE_URL;
+    creativeWork.subjectOf = { '@id': filmId };
+    graph.push({
+      '@type': 'VideoObject',
+      '@id': filmId,
+      name: 'Explo.11 Testing & Interview — Prof. Hsiang-Han Huang',
+      description: 'A field interview about children’s mobility, play, and occupational therapy conducted during the development of Explo.11.',
+      thumbnailUrl: [`${SITE_URL}/works/explo.11/explo11-film-poster.jpg`],
+      uploadDate: project.publishedAt ?? project.updatedAt,
+      duration: 'PT5M18S',
+      contentUrl: EXPLO11_FILM_URL,
+      encodingFormat: 'video/mp4',
+      inLanguage: ['zh-TW', 'en'],
+      isFamilyFriendly: true,
+      encodesCreativeWork: { '@id': projectId },
+      contributor: {
+        '@type': 'Person',
+        name: 'Hsiang-Han Huang',
+        alternateName: '黃湘涵',
+        jobTitle: 'Associate Professor, Department of Occupational Therapy',
+        affiliation: { '@type': 'CollegeOrUniversity', name: 'Chang Gung University' },
+      },
+      caption: {
+        '@type': 'MediaObject',
+        contentUrl: `${SITE_URL}/works/explo.11/explo11-en.vtt`,
+        encodingFormat: 'text/vtt',
+        inLanguage: 'en',
+      },
+    });
+  }
+
+  return { '@context': 'https://schema.org', '@graph': graph };
+};
 
 const upsertMeta = (attribute: 'name' | 'property', key: string, content: string) => {
   let element = document.head.querySelector<HTMLMetaElement>(`meta[${attribute}="${key}"]`);
@@ -60,6 +171,7 @@ const setDocumentSeo = ({ title, description, canonical, image, imageAlt, type, 
   upsertMeta('name', 'twitter:title', title);
   upsertMeta('name', 'twitter:description', description);
   upsertMeta('name', 'twitter:image', image);
+  upsertMeta('name', 'twitter:image:alt', imageAlt);
   setJsonLd(jsonLd);
 };
 
@@ -101,35 +213,19 @@ export const applyHomeSeo = () => setDocumentSeo({
 
 export const applyProjectSeo = (project: Project) => {
   const canonical = `${SITE_URL}/projects/${encodeURIComponent(project.slug)}`;
-  const description = project.summary || `${project.category} project by industrial designer Paul Yang.`;
+  const title = getProjectSeoTitle(project);
+  const description = getProjectSeoDescription(project);
   const image = project.coverImageUrl ? new URL(project.coverImageUrl, SITE_URL).href : HOME_IMAGE;
 
   setDocumentSeo({
-    title: `${project.title} — Paul Yang`,
+    title,
     description,
     canonical,
     image,
-    imageAlt: `${project.title} project cover`,
+    imageAlt: project.slug === 'explo-11' ? 'Explo.11 inclusive mobility design project cover' : `${project.title} project cover`,
     type: 'article',
     robots: 'index, follow, max-image-preview:large',
-    jsonLd: {
-      '@context': 'https://schema.org',
-      '@type': 'CreativeWork',
-      name: project.title,
-      description,
-      url: canonical,
-      image,
-      genre: project.category,
-      keywords: project.tools.join(', '),
-      datePublished: project.publishedAt ?? undefined,
-      dateModified: project.updatedAt,
-      creator: {
-        '@type': 'Person',
-        '@id': `${SITE_URL}/#paul-yang`,
-        name: 'Paul Yang',
-        alternateName: 'Po-Yu Yang',
-      },
-    },
+    jsonLd: projectJsonLd(project, title, canonical, description, image),
   });
 };
 

@@ -45,6 +45,7 @@ export const renderSeoBlock = (seo: SeoDocument) => `
     <meta name="twitter:title" content="${escapeHtml(seo.title)}" />
     <meta name="twitter:description" content="${escapeHtml(seo.description)}" />
     <meta name="twitter:image" content="${escapeHtml(seo.image)}" />
+    <meta name="twitter:image:alt" content="${escapeHtml(seo.imageAlt)}" />
     <script id="seo-jsonld" type="application/ld+json">${safeJsonLd(seo.jsonLd)}</script>
     <meta name="seo-boundary-end" content="true" />`;
 

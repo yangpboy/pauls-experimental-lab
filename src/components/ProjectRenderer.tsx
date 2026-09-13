@@ -1,5 +1,5 @@
 import { ChevronLeft, ChevronRight, ZoomIn } from 'lucide-react';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { Fragment, type ReactNode, useCallback, useEffect, useMemo, useState } from 'react';
 import LazyImage from './LazyImage';
 import type { GalleryImage, ProcessStep, Project, ProjectBlock, ProjectBlockContent } from '../types/cms';
 
@@ -109,11 +109,13 @@ const Block = ({
   project,
   priority,
   onImageOpen,
+  sectionIdForGalleryImage,
 }: {
   block: ProjectBlock;
   project: Project;
   priority: boolean;
   onImageOpen: (url: string) => void;
+  sectionIdForGalleryImage?: (image: GalleryImage, index: number) => string | undefined;
 }) => {
   const content = block.content;
 
@@ -169,7 +171,11 @@ const Block = ({
     return (
       <section className={`grid grid-cols-1 bg-white dark:bg-[#050505] ${columnClass} ${gapClass}`}>
         {images.map((image, index) => (
-          <figure key={`${image.url}-${index}`} className="min-w-0">
+          <figure
+            key={`${image.url}-${index}`}
+            id={sectionIdForGalleryImage?.(image, index)}
+            className="min-w-0 scroll-mt-4"
+          >
             <ZoomableImage
               src={image.url}
               alt={image.alt || `${project.title} image ${index + 1}`}
@@ -265,7 +271,17 @@ const Block = ({
   );
 };
 
-export default function ProjectRenderer({ project }: { project: Project }) {
+export default function ProjectRenderer({
+  project,
+  sectionIdForGalleryImage,
+  beforeBlock,
+  shouldRenderBlock,
+}: {
+  project: Project;
+  sectionIdForGalleryImage?: (image: GalleryImage, index: number) => string | undefined;
+  beforeBlock?: (block: ProjectBlock, index: number) => ReactNode;
+  shouldRenderBlock?: (block: ProjectBlock, index: number) => boolean;
+}) {
   const images = useMemo(() => previewImages(project), [project]);
   const [activeImageIndex, setActiveImageIndex] = useState<number | null>(null);
   const activeImage = activeImageIndex === null ? null : images[activeImageIndex];
@@ -313,13 +329,18 @@ export default function ProjectRenderer({ project }: { project: Project }) {
     <>
       <div>
         {[...project.blocks].sort((a, b) => a.sortOrder - b.sortOrder).map((block, index) => (
-          <Block
-            key={block.id}
-            block={block}
-            project={project}
-            priority={index === 0}
-            onImageOpen={openLightbox}
-          />
+          <Fragment key={block.id}>
+            {beforeBlock?.(block, index)}
+            {shouldRenderBlock?.(block, index) !== false && (
+              <Block
+                block={block}
+                project={project}
+                priority={index === 0}
+                onImageOpen={openLightbox}
+                sectionIdForGalleryImage={sectionIdForGalleryImage}
+              />
+            )}
+          </Fragment>
         ))}
       </div>
 
