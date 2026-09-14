@@ -31,11 +31,13 @@ export const renderSeoBlock = (seo: SeoDocument) => `
     <title>${escapeHtml(seo.title)}</title>
     <meta name="description" content="${escapeHtml(seo.description)}" />
     <meta name="author" content="Paul Yang" />
-    <meta name="robots" content="${escapeHtml(seo.robots ?? 'index, follow, max-image-preview:large')}" />
+    <meta name="robots" content="${escapeHtml(seo.robots ?? 'index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1')}" />
+    <meta name="googlebot" content="${escapeHtml(seo.robots ?? 'index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1')}" />
+    <meta name="bingbot" content="${escapeHtml(seo.robots ?? 'index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1')}" />
     <link rel="canonical" href="${escapeHtml(seo.canonical)}" />
     <meta property="og:type" content="${seo.type ?? 'website'}" />
     <meta property="og:site_name" content="Paul's Experimental Lab" />
-    <meta property="og:locale" content="en_US" />
+    <meta property="og:locale" content="en_GB" />
     <meta property="og:title" content="${escapeHtml(seo.title)}" />
     <meta property="og:description" content="${escapeHtml(seo.description)}" />
     <meta property="og:url" content="${escapeHtml(seo.canonical)}" />

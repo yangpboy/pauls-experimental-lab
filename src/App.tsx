@@ -898,9 +898,9 @@ function PortfolioApp() {
     if (routeProjectSlug && selectedProject) {
       applyProjectSeo(selectedProject);
     } else if (!routeProjectSlug) {
-      applyHomeSeo();
+      applyHomeSeo(projects);
     }
-  }, [routeProjectSlug, selectedProject]);
+  }, [projects, routeProjectSlug, selectedProject]);
 
   useEffect(() => {
     window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
