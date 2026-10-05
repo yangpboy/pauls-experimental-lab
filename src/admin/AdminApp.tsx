@@ -45,6 +45,7 @@ const inputClass = 'w-full rounded-md border border-[#d8d8d8] bg-white px-3 py-2
 const labelClass = 'mb-1.5 block text-[11px] font-semibold text-[#5f5f5f]';
 const secondaryButtonClass = 'inline-flex items-center justify-center gap-2 rounded-full border border-[#d8d8d8] bg-white px-4 py-2 text-sm font-semibold text-[#191919] transition hover:border-[#9b9b9b] hover:bg-[#f7f7f7] disabled:cursor-not-allowed disabled:opacity-45';
 const primaryButtonClass = 'inline-flex items-center justify-center gap-2 rounded-full bg-[#1769ff] px-5 py-2 text-sm font-semibold text-white transition hover:bg-[#0057e7] disabled:cursor-not-allowed disabled:opacity-45';
+const DEFAULT_CREATIVE_FIELDS = ['Product Design', 'Spatial Design', 'Portfolio', 'Collectible Design'];
 
 const BLOCK_META: Record<BlockType, { label: string; description: string; icon: LucideIcon }> = {
   hero: { label: 'Hero', description: 'Large opening image and title', icon: LayoutTemplate },
@@ -63,6 +64,7 @@ const emptyProject = (sortOrder = 0): ProjectInput => ({
   summary: '',
   coverImageUrl: '',
   category: 'Product Design',
+  creativeFields: ['Product Design'],
   projectDate: '',
   location: '',
   author: 'Po-Yu Yang',
@@ -78,6 +80,7 @@ const projectToInput = (project: Project): ProjectInput => ({
   summary: project.summary,
   coverImageUrl: project.coverImageUrl,
   category: project.category,
+  creativeFields: project.creativeFields?.length > 0 ? [...project.creativeFields] : [project.category],
   projectDate: project.projectDate,
   location: project.location,
   author: project.author,
@@ -111,6 +114,63 @@ function Field({ label, value, onChange, placeholder, type = 'text' }: {
       <span className={labelClass}>{label}</span>
       <input className={inputClass} type={type} value={value} onChange={(event) => onChange(event.target.value)} placeholder={placeholder} />
     </label>
+  );
+}
+
+function TagField({ label, values, suggestions, onChange }: {
+  label: string;
+  values: string[];
+  suggestions: string[];
+  onChange: (values: string[]) => void;
+}) {
+  const [value, setValue] = useState('');
+
+  const addValues = () => {
+    const additions = value.split(',').map((item) => item.trim()).filter(Boolean);
+    if (additions.length === 0) return;
+
+    const seen = new Set(values.map((item) => item.toLocaleLowerCase()));
+    const next = [...values];
+    additions.forEach((item) => {
+      const key = item.toLocaleLowerCase();
+      if (seen.has(key)) return;
+      seen.add(key);
+      next.push(item);
+    });
+    onChange(next.slice(0, 12));
+    setValue('');
+  };
+
+  return (
+    <div>
+      <span className={labelClass}>{label}</span>
+      <div className="flex flex-wrap gap-2 rounded-md border border-[#d8d8d8] bg-white p-2.5 focus-within:border-[#1769ff] focus-within:ring-2 focus-within:ring-[#1769ff]/15">
+        {values.map((item, index) => (
+          <span key={`${item}-${index}`} className="inline-flex h-8 items-center gap-1.5 rounded-full bg-[#edf3ff] pl-3 pr-2 text-xs font-semibold text-[#1769ff]">
+            <span aria-hidden="true">#</span>{item}
+            <button type="button" className="grid h-5 w-5 place-items-center rounded-full transition hover:bg-[#1769ff]/10" onClick={() => onChange(values.filter((_, valueIndex) => valueIndex !== index))} aria-label={`Remove ${item}`}><X size={12} /></button>
+          </span>
+        ))}
+        <input
+          className="min-w-40 flex-1 bg-transparent px-1 text-sm text-[#191919] outline-none placeholder:text-[#9b9b9b]"
+          list="creative-field-suggestions"
+          value={value}
+          onChange={(event) => setValue(event.target.value)}
+          onKeyDown={(event) => {
+            if (event.key !== 'Enter' && event.key !== ',') return;
+            event.preventDefault();
+            addValues();
+          }}
+          placeholder={values.length === 0 ? 'Add a creative field' : 'Add another field'}
+          aria-label="Add a creative field"
+        />
+        <button type="button" className="inline-flex h-8 items-center gap-1 rounded-full bg-[#1769ff] px-3 text-xs font-semibold text-white transition hover:bg-[#0057e7] disabled:opacity-40" disabled={!value.trim()} onClick={addValues}><Plus size={13} /> Add</button>
+      </div>
+      <datalist id="creative-field-suggestions">
+        {suggestions.map((suggestion) => <option key={suggestion} value={suggestion} />)}
+      </datalist>
+      <p className="mt-1.5 text-[10px] leading-4 text-[#858585]">Add with Enter or comma. The first tag is the primary field.</p>
+    </div>
   );
 }
 
@@ -465,6 +525,10 @@ export default function AdminApp() {
   const [dragOverBlockId, setDragOverBlockId] = useState<string | null>(null);
 
   const selectedProject = useMemo(() => projects.find((project) => project.id === selectedId) ?? null, [projects, selectedId]);
+  const creativeFieldSuggestions = useMemo(() => Array.from(new Set([
+    ...DEFAULT_CREATIVE_FIELDS,
+    ...projects.flatMap((project) => project.creativeFields?.length > 0 ? project.creativeFields : [project.category]),
+  ])).filter(Boolean), [projects]);
   const selectedBlockIndex = useMemo(() => draft?.blocks.findIndex((block) => block.id === selectedBlockId) ?? -1, [draft, selectedBlockId]);
   const selectedBlock = selectedBlockIndex >= 0 && draft ? draft.blocks[selectedBlockIndex] : null;
   const hasLocalMedia = useMemo(() => Boolean(draft && JSON.stringify(draft).includes('blob:')), [draft]);
@@ -472,6 +536,7 @@ export default function AdminApp() {
     { label: 'Project title', ready: Boolean(draft.title.trim()) },
     { label: 'Project URL', ready: Boolean(draft.slug.trim()) },
     { label: 'Cover image', ready: Boolean(draft.coverImageUrl.trim()) },
+    { label: 'Creative field', ready: draft.creativeFields.length > 0 },
     { label: 'Content block', ready: draft.blocks.length > 0 },
   ] : [], [draft]);
 
@@ -528,6 +593,16 @@ export default function AdminApp() {
 
   const updateDraft = <K extends keyof ProjectInput>(key: K, value: ProjectInput[K]) => {
     setDraft((current) => current ? { ...current, [key]: value } : current);
+    setIsDirty(true);
+    setNotice(null);
+  };
+
+  const updateCreativeFields = (creativeFields: string[]) => {
+    setDraft((current) => current ? {
+      ...current,
+      creativeFields,
+      category: creativeFields[0] ?? 'Uncategorized',
+    } : current);
     setIsDirty(true);
     setNotice(null);
   };
@@ -727,7 +802,7 @@ export default function AdminApp() {
                   </div>
                   <div className="min-w-0">
                     <span className="block truncate text-sm font-semibold">{project.title}</span>
-                    <span className="mt-1 block truncate text-[11px] text-[#737373]">{project.category || 'Uncategorized'}</span>
+                    <span className="mt-1 block truncate text-[11px] text-[#737373]">{(project.creativeFields?.length > 0 ? project.creativeFields : [project.category]).join(' · ')}</span>
                     <span className="mt-1.5 block"><StatusBadge status={project.status} /></span>
                   </div>
                 </button>
@@ -742,21 +817,27 @@ export default function AdminApp() {
 
         <main className="min-w-0 px-4 py-8 md:px-8 xl:px-10">
           <div className="mx-auto max-w-[1040px]">
-            {!draft && <div className="mb-5 flex items-center gap-2 rounded-lg border border-[#dedede] bg-white p-2 2xl:hidden">
-              <select
-                className={`${inputClass} min-w-0 flex-1 border-0 bg-[#f7f7f7]`}
-                value={selectedId ?? ''}
-                onChange={(event) => {
-                  const project = projects.find((item) => item.id === event.target.value);
-                  if (project) selectProject(project);
-                }}
-                aria-label="Choose a project"
-              >
-                <option value="">Choose a project</option>
-                {projects.map((project) => <option key={project.id} value={project.id}>{project.title} · {project.status}</option>)}
-              </select>
-              <button type="button" className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-[#1769ff] text-white" onClick={createNew} aria-label="Create a project"><Plus size={18} /></button>
-            </div>}
+            <div className="mb-5 flex items-end gap-2 rounded-lg border border-[#dedede] bg-white p-3 shadow-sm 2xl:hidden">
+              <div className="min-w-0 flex-1">
+                <label htmlFor="admin-project-picker" className="mb-1.5 block text-[11px] font-semibold uppercase tracking-[0.1em] text-[#737373]">
+                  Edit an existing project
+                </label>
+                <select
+                  id="admin-project-picker"
+                  className={`${inputClass} min-w-0 border-[#d8d8d8] bg-[#f7f7f7]`}
+                  value={selectedId ?? ''}
+                  disabled={loading || saving}
+                  onChange={(event) => {
+                    const project = projects.find((item) => item.id === event.target.value);
+                    if (project) selectProject(project);
+                  }}
+                >
+                  <option value="">Select a project to edit</option>
+                  {projects.map((project) => <option key={project.id} value={project.id}>{project.title} · {project.status}</option>)}
+                </select>
+              </div>
+              <button type="button" className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-[#1769ff] text-white transition hover:bg-[#0f55d3] disabled:opacity-50" disabled={loading || saving} onClick={createNew} aria-label="Create a project"><Plus size={18} /></button>
+            </div>
             {error && <div role="alert" className="mb-5 flex items-start gap-3 rounded-md border border-red-200 bg-red-50 p-4 text-sm text-red-800"><span className="mt-0.5 h-2 w-2 shrink-0 rounded-full bg-red-500" />{error}</div>}
             {notice && <div role="status" className="mb-5 flex items-start gap-3 rounded-md border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-800"><Check className="mt-0.5 shrink-0" size={15} />{notice}</div>}
             {!draft ? (
@@ -905,7 +986,7 @@ export default function AdminApp() {
                 <Field label="URL slug *" value={draft.slug} onChange={(slug) => updateDraft('slug', slugify(slug))} placeholder="project-url-slug" />
                 <TextArea label="Project description" rows={4} value={draft.summary} onChange={(summary) => updateDraft('summary', summary)} placeholder="A short summary for the project card and search results." />
                 <MediaField label="Cover image" value={draft.coverImageUrl} onChange={(coverImageUrl) => updateDraft('coverImageUrl', coverImageUrl)} onUpload={(file) => void uploadCover(file)} uploading={uploadingTarget === 'cover'} />
-                <Field label="Creative field" value={draft.category} onChange={(category) => updateDraft('category', category)} />
+                <TagField label="Creative fields" values={draft.creativeFields} suggestions={creativeFieldSuggestions} onChange={updateCreativeFields} />
                 <Field label="Project date" value={draft.projectDate} onChange={(projectDate) => updateDraft('projectDate', projectDate)} placeholder="10.2025–11.2025" />
                 <Field label="Location" value={draft.location} onChange={(location) => updateDraft('location', location)} />
                 <Field label="Author" value={draft.author} onChange={(author) => updateDraft('author', author)} />

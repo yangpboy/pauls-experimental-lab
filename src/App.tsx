@@ -3,9 +3,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
 import { lazy, Suspense, useRef, useEffect, useState, useMemo } from 'react';
-import { X, Share2, ArrowUpRight, Heart, ChevronLeft, ChevronRight, BookOpen, ArrowDown, Menu, Settings, LockKeyhole, LayoutGrid, Layers3 } from 'lucide-react';
+import { X, Share2, ArrowUpRight, Heart, ChevronLeft, ChevronRight, BookOpen, ArrowDown, Menu, Settings, LockKeyhole, LayoutGrid, Layers3, ListFilter } from 'lucide-react';
 import ProjectRenderer from './components/ProjectRenderer';
 import TiniWebCaseStudy from './components/TiniWebCaseStudy';
 import GeologicAssembliesExperience from './components/GeologicAssembliesExperience';
@@ -15,6 +15,7 @@ import Explo11Index from './components/Explo11Index';
 import AdminApp from './admin/AdminApp';
 import AdminLogin from './admin/AdminLogin';
 import { CmsApiError, projectsApi } from './lib/api';
+import { getGarageProjectPresentation } from './lib/garagePresentation';
 import { getProjectCreativeFields } from './lib/projectCreativeFields';
 import { applyHomeSeo, applyProjectSeo, getProjectSeoDescription } from './lib/seo';
 import type { Project, ProjectSummary } from './types/cms';
@@ -231,8 +232,8 @@ const POPage = ({
             </div>
 
             {/* Right: Content */}
-            <div className={`w-full md:w-1/2 min-h-screen flex flex-col justify-end relative z-20 transition-colors ${theme === 'dark' ? 'bg-[#111111]' : 'bg-white'}`}>
-              <div className="p-8 md:p-16 lg:p-24 max-w-2xl mx-auto flex flex-col min-h-full justify-end pb-8 md:pb-16">
+            <div className={`relative z-20 flex min-h-screen w-full min-w-0 flex-col justify-end transition-colors md:w-1/2 ${theme === 'dark' ? 'bg-[#111111]' : 'bg-white'}`}>
+              <div className="mx-auto flex min-h-full w-full min-w-0 max-w-2xl flex-col justify-end p-8 pb-8 md:px-12 md:pb-12 md:pt-28 lg:px-16 lg:pb-16 lg:pt-28 xl:px-24 xl:pb-16 xl:pt-24">
               
               <FadeIn delay={0.2}>
                 <div className="space-y-12">
@@ -244,16 +245,16 @@ const POPage = ({
                   </div>
 
                   {/* Details Grid */}
-                  <div className="grid grid-cols-2 gap-8 py-8 border-y border-current/10">
+                  <div className="grid min-w-0 grid-cols-2 gap-6 border-y border-current/10 py-8 md:grid-cols-1 lg:grid-cols-2 lg:gap-8">
                     <div>
                       <h4 className={`text-xs font-bold tracking-widest uppercase mb-4 ${theme === 'dark' ? 'text-white/50' : 'text-black/50'}`}>Based In</h4>
-                      <p className={`font-medium ${theme === 'dark' ? 'text-white' : 'text-black'}`}>Taiwan & Germany</p>
+                      <p className={`font-medium ${theme === 'dark' ? 'text-white' : 'text-black'}`}>Taiwan & UK</p>
                     </div>
                     <div>
                       <h4 className={`text-xs font-bold tracking-widest uppercase mb-4 ${theme === 'dark' ? 'text-white/50' : 'text-black/50'}`}>Education</h4>
-                      <p className={`font-medium ${theme === 'dark' ? 'text-white' : 'text-black'}`}>National Taiwan Normal University</p>
+                      <p className={`break-words font-medium ${theme === 'dark' ? 'text-white' : 'text-black'}`}>Imperial College London, Royal College Of Art</p>
                     </div>
-                    <div className="col-span-2">
+                    <div className="col-span-2 md:col-span-1 lg:col-span-2">
                       <h4 className={`text-xs font-bold tracking-widest uppercase mb-4 ${theme === 'dark' ? 'text-white/50' : 'text-black/50'}`}>Focus Areas</h4>
                       <div className="flex flex-wrap gap-2">
                         {['Industrial Design', 'User Research', 'UI/UX', 'Prototyping'].map(skill => (
@@ -271,7 +272,7 @@ const POPage = ({
                       With a background shaped by both engineering and art, I bring a unique perspective that balances craftsmanship, creativity, and human-centered experiences.
                     </p>
                     <p>
-                      My journey from Taiwan to Germany has broadened my view of how products, users, and environments connect across cultures. I believe that design is not just about problem-solving; it's about enriching life by offering more possibilities and choices.
+                      My journey from Taiwan to the UK has broadened my view of how products, users, and environments connect across cultures. I believe that design is not just about problem-solving; it's about enriching life by offering more possibilities and choices.
                     </p>
                   </div>
                 </div>
@@ -636,6 +637,7 @@ export default function App() {
 function PortfolioApp() {
   const [activePage, setActivePage] = useState<PortfolioPage>(() => portfolioPageFromLocation());
   const [activeGarageCategory, setActiveGarageCategory] = useState('All');
+  const [garageFilterOpen, setGarageFilterOpen] = useState(false);
   const [garageView, setGarageView] = useState<'deck' | 'grid'>('deck');
   const [headRenderMode, setHeadRenderMode] = useState<'normal' | 'low'>('normal');
   const [colorMode, setColorMode] = useState<'light' | 'dark'>(() => {
@@ -674,6 +676,10 @@ function PortfolioApp() {
   const pageScrollPositionRef = useRef(0);
 
   const theme = colorMode;
+  const prefersReducedMotion = useReducedMotion();
+  const pageTransition = prefersReducedMotion
+    ? { duration: 0 }
+    : { duration: 0.42, ease: [0.22, 1, 0.36, 1] as const };
   const themeToggleIcon = colorMode === 'light' ? '/icons/B_ dark.png' : '/icons/W_ light.png';
   const text = language === 'zh'
     ? {
@@ -694,6 +700,7 @@ function PortfolioApp() {
       loadingHead: '載入頭像',
       garageSubtitle: 'Paul 的實驗檔案',
       categories: '分類',
+      filter: '篩選',
       sketchTitle: 'Sketchbook',
       sketchCategory: 'Sketch',
       sketchDescription: '草圖、形式研究與正在發展中的概念練習。',
@@ -720,6 +727,7 @@ function PortfolioApp() {
       loadingHead: 'Loading head',
       garageSubtitle: "Paul's experimental archive",
       categories: 'Categories',
+      filter: 'Filter',
       sketchTitle: 'Sketchbook',
       sketchCategory: 'Sketch',
       sketchDescription: 'Sketches, form studies, and developing concept exercises.',
@@ -734,19 +742,12 @@ function PortfolioApp() {
     [projects]
   );
 
-  const garageCategories = useMemo(
-    () => [
-      'All',
-      ...(SHOW_SKETCHBOOK ? ['Sketch'] : []),
-      ...Array.from(new Set(garagePosts.map((post) => post.category || 'Uncategorized'))),
-    ],
-    [garagePosts]
-  );
+  const garageCategories = ['All', 'Product Design', 'Portfolio', 'Spatial Design'];
 
   const filteredGaragePosts = useMemo(
     () => activeGarageCategory === 'All'
       ? garagePosts
-      : garagePosts.filter((post) => (post.category || 'Uncategorized') === activeGarageCategory),
+      : garagePosts.filter((post) => getProjectCreativeFields(post).includes(activeGarageCategory)),
     [activeGarageCategory, garagePosts]
   );
   const navItems = [
@@ -809,6 +810,20 @@ function PortfolioApp() {
       // Theme switching should still work when persistence is blocked.
     }
   }, [colorMode]);
+
+  useEffect(() => {
+    if (!garageFilterOpen) return;
+
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setGarageFilterOpen(false);
+    };
+    window.addEventListener('keydown', closeOnEscape);
+    return () => window.removeEventListener('keydown', closeOnEscape);
+  }, [garageFilterOpen]);
+
+  useEffect(() => {
+    if (activePage !== 'garage') setGarageFilterOpen(false);
+  }, [activePage]);
 
   useEffect(() => {
     let cancelled = false;
@@ -916,7 +931,7 @@ function PortfolioApp() {
     }
     setActivePage(page);
     window.requestAnimationFrame(() => {
-      window.scrollTo({ top: 0, left: 0, behavior: 'smooth' });
+      window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
     });
   };
 
@@ -1038,11 +1053,11 @@ function PortfolioApp() {
 
   return (
     <div className="min-h-screen overflow-x-hidden bg-light-gray text-light-ink font-sans selection:bg-light-teal/40 dark:bg-[#111111] dark:text-white">
-      <nav className={`pointer-events-none fixed left-0 right-0 top-0 z-[120] items-center justify-between gap-4 px-5 py-3 md:px-[5vw] md:py-5 ${activePage === 'garage' ? 'hidden' : 'flex'}`}>
+      <nav className={`pointer-events-none fixed left-0 right-0 top-0 z-[260] items-center gap-4 px-5 py-3 md:px-[5vw] md:py-5 ${activePage === 'garage' ? 'justify-end' : 'justify-between'} ${routeProjectSlug ? 'hidden' : 'flex'}`}>
         <a
           href="/"
           onClick={(event) => { event.preventDefault(); navigateToPage('head'); }}
-          className="pointer-events-auto flex h-14 max-w-[64vw] items-center gap-2 transition-opacity hover:opacity-75 sm:max-w-none sm:gap-2.5"
+          className={`pointer-events-auto h-14 max-w-[64vw] items-center gap-2 transition-opacity hover:opacity-75 sm:max-w-none sm:gap-2.5 ${activePage === 'garage' ? 'hidden' : 'flex'}`}
           aria-label="Paul's Experimental Lab"
         >
           <img
@@ -1065,13 +1080,20 @@ function PortfolioApp() {
                 key={item.page}
                 href={portfolioPageHref(item.page)}
                 onClick={(event) => { event.preventDefault(); navigateToPage(item.page); }}
-                className={`flex h-10 items-center rounded-full border px-4 no-underline transition hover:border-light-coral hover:text-light-coral ${
+                className={`relative isolate flex h-10 items-center overflow-hidden rounded-full border px-4 no-underline transition-colors duration-300 ${
                   activePage === item.page
-                    ? 'border-light-coral bg-light-coral text-black'
-                    : 'border-white/35 bg-white/5 text-white'
+                    ? 'border-light-coral text-black'
+                    : 'border-white/35 bg-white/5 text-white hover:border-light-coral hover:text-light-coral'
                 }`}
               >
-                {item.label}
+                {activePage === item.page && (
+                  <motion.span
+                    layoutId="portfolio-nav-active-pill"
+                    className="absolute inset-0 z-0 rounded-full bg-light-coral"
+                    transition={prefersReducedMotion ? { duration: 0 } : { type: 'spring', stiffness: 360, damping: 34, mass: 0.72 }}
+                  />
+                )}
+                <span className="relative z-10">{item.label}</span>
               </a>
             ))}
             <button
@@ -1189,8 +1211,15 @@ function PortfolioApp() {
         ))}
       </div>
 
+      <AnimatePresence mode="popLayout" initial={false}>
       {activePage === 'head' && (
-        <>
+        <motion.div
+          key="head"
+          initial={prefersReducedMotion ? false : { opacity: 0, y: 14 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={prefersReducedMotion ? { opacity: 1 } : { opacity: 0, y: -10 }}
+          transition={pageTransition}
+        >
           <section
             id="head"
             className="relative z-10 h-[100svh] min-h-[760px] overflow-visible bg-white [--hero-anchor-x:50%] [--hero-anchor-y:43%] [--hero-model-y:43%] dark:bg-[#111111] md:min-h-[620px] md:[--hero-anchor-y:48%] md:[--hero-model-y:50%]"
@@ -1365,12 +1394,17 @@ function PortfolioApp() {
               </div>
             </div>
           </section>
-        </>
+        </motion.div>
       )}
 
       {activePage === 'garage' && (
-        <section
+        <motion.section
+          key="garage"
           id="garage"
+          initial={prefersReducedMotion ? false : { opacity: 0, y: 14 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={prefersReducedMotion ? { opacity: 1 } : { opacity: 0, y: -10 }}
+          transition={pageTransition}
           className={`relative min-h-screen overflow-hidden ${
             garageView === 'deck'
               ? 'h-[100svh] min-h-[620px] bg-black p-0 text-white'
@@ -1395,26 +1429,17 @@ function PortfolioApp() {
               <ChevronLeft className="h-5 w-5" />
             </button>
 
-            <button
-              type="button"
-              onClick={() => setGarageView((current) => current === 'deck' ? 'grid' : 'deck')}
-              className="garage-glass fixed right-3 top-3 z-[150] flex h-10 items-center gap-2 rounded-full border px-3 font-mono text-[9px] font-black uppercase tracking-[.1em] text-white transition hover:-translate-y-0.5 hover:border-light-coral hover:text-light-coral sm:px-4 sm:text-[10px] md:right-6 md:top-5"
-              aria-label={garageView === 'deck' ? `Switch to ${text.gridView}` : `Switch to ${text.deckView}`}
-            >
-              {garageView === 'deck' ? <LayoutGrid className="h-4 w-4" /> : <Layers3 className="h-4 w-4" />}
-              {garageView === 'deck' ? text.gridView : text.deckView}
-            </button>
-
-            <div className="garage-glass fixed left-1/2 top-[3.75rem] z-[140] flex h-10 w-fit max-w-[calc(100vw-1.5rem)] -translate-x-1/2 items-center overflow-x-auto rounded-full border p-1 backdrop-blur-md [scrollbar-width:none] [&::-webkit-scrollbar]:hidden md:top-5 md:max-w-[calc(100vw-12rem)]">
-              <div className="flex w-max flex-nowrap gap-1.5">
+            <div className="garage-glass fixed left-1/2 top-7 z-[150] hidden h-10 max-w-[calc(100vw-16rem)] -translate-x-1/2 items-center overflow-x-auto rounded-full border p-1 backdrop-blur-md [scrollbar-width:none] [&::-webkit-scrollbar]:hidden min-[1120px]:flex">
+              <div className="flex w-max flex-nowrap gap-1">
                 {garageCategories.map((category) => (
                   <button
+                    type="button"
                     key={category}
                     onClick={() => setActiveGarageCategory(category)}
-                    className={`h-8 shrink-0 rounded-full border px-4 font-mono text-xs font-black uppercase leading-none transition hover:-translate-y-0.5 ${
+                    className={`h-8 shrink-0 rounded-full border px-3.5 font-mono text-[10px] font-black uppercase leading-none transition hover:border-light-coral xl:px-4 xl:text-xs ${
                       activeGarageCategory === category
                         ? 'border-light-coral bg-light-coral text-black'
-                        : 'border-white/35 bg-white/5 text-white hover:border-light-coral hover:text-light-coral'
+                        : 'border-white/35 bg-white/5 text-white hover:text-light-coral'
                     }`}
                   >
                     {category}
@@ -1422,6 +1447,157 @@ function PortfolioApp() {
                 ))}
               </div>
             </div>
+
+            <button
+              type="button"
+              onClick={() => setGarageView((current) => current === 'deck' ? 'grid' : 'deck')}
+              className="group fixed right-[5vw] top-[6.25rem] z-[150] hidden h-12 w-12 touch-manipulation select-none rounded-full border-0 bg-transparent p-0 outline-none transition-transform duration-300 ease-out hover:-translate-y-1 hover:scale-110 focus-visible:ring-4 focus-visible:ring-light-coral/45 md:block"
+              aria-label={garageView === 'deck' ? `Switch to ${text.gridView}` : `Switch to ${text.deckView}`}
+              aria-describedby="garage-view-tooltip"
+              aria-pressed={garageView === 'grid'}
+            >
+              <span
+                id="garage-view-tooltip"
+                role="tooltip"
+                className="garage-glass pointer-events-none absolute right-[calc(100%+0.75rem)] top-1/2 z-10 -translate-y-1/2 whitespace-nowrap border px-3 py-2 font-mono text-[10px] font-black uppercase leading-none text-white opacity-0 transition-opacity group-hover:opacity-100 group-focus-visible:opacity-100 md:text-xs"
+              >
+                {garageView === 'deck' ? text.gridView : text.deckView}
+                <span className="mx-2 text-light-coral">/</span>
+                {text.headModeHint}
+              </span>
+              <img
+                src={layeredFlowerA}
+                alt=""
+                className="h-full w-full object-contain transition-transform duration-300 group-hover:rotate-6 group-active:scale-90"
+                draggable={false}
+              />
+            </button>
+
+            <div className="fixed left-1/2 top-7 z-[150] hidden -translate-x-1/2 md:block min-[1120px]:hidden">
+              <button
+                type="button"
+                className={`garage-glass flex h-10 items-center gap-2 rounded-full border px-4 font-mono text-[10px] font-black uppercase tracking-[.1em] text-white transition hover:border-light-coral hover:text-light-coral ${garageFilterOpen ? 'border-light-coral text-light-coral' : ''}`}
+                onClick={() => setGarageFilterOpen((current) => !current)}
+                aria-expanded={garageFilterOpen}
+                aria-controls="tablet-garage-filters"
+                aria-label={`${text.filter}: ${activeGarageCategory}`}
+              >
+                <ListFilter className="h-4 w-4" />
+                {text.filter}
+                {activeGarageCategory !== 'All' && <span className="h-1.5 w-1.5 rounded-full bg-light-coral" aria-hidden="true" />}
+              </button>
+
+              <AnimatePresence>
+                {garageFilterOpen && (
+                  <motion.div
+                    id="tablet-garage-filters"
+                    className="garage-glass absolute left-1/2 top-12 w-72 -translate-x-1/2 overflow-hidden rounded-2xl border p-2 shadow-2xl backdrop-blur-xl"
+                    initial={{ opacity: 0, x: '-50%', y: -8, scale: 0.98 }}
+                    animate={{ opacity: 1, x: '-50%', y: 0, scale: 1 }}
+                    exit={{ opacity: 0, x: '-50%', y: -8, scale: 0.98 }}
+                    transition={{ duration: 0.18 }}
+                  >
+                    <div className="space-y-1">
+                      {garageCategories.map((category) => (
+                        <button
+                          type="button"
+                          key={category}
+                          onClick={() => {
+                            setActiveGarageCategory(category);
+                            setGarageFilterOpen(false);
+                          }}
+                          className={`flex min-h-10 w-full items-center justify-between gap-3 rounded-xl px-3 py-2 text-left font-mono text-[11px] font-black uppercase tracking-[.06em] transition ${
+                            activeGarageCategory === category
+                              ? 'bg-light-coral text-black'
+                              : 'text-white hover:bg-white/10 hover:text-light-coral'
+                          }`}
+                          aria-current={activeGarageCategory === category ? 'true' : undefined}
+                        >
+                          <span>{category}</span>
+                          {activeGarageCategory === category && <span className="h-2 w-2 shrink-0 rounded-full bg-black" aria-hidden="true" />}
+                        </button>
+                      ))}
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+
+            <div className="fixed right-3 top-[5rem] z-[150] md:hidden">
+              <button
+                type="button"
+                className={`garage-glass flex h-10 items-center gap-2 rounded-full border px-3 font-mono text-[9px] font-black uppercase tracking-[.1em] text-white transition hover:border-light-coral hover:text-light-coral ${garageFilterOpen ? 'border-light-coral text-light-coral' : ''}`}
+                onClick={() => setGarageFilterOpen((current) => !current)}
+                aria-expanded={garageFilterOpen}
+                aria-controls="mobile-garage-controls"
+                aria-label="Garage view and filter controls"
+              >
+                <ListFilter className="h-4 w-4" />
+                Controls
+                {(activeGarageCategory !== 'All' || garageView !== 'deck') && <span className="h-1.5 w-1.5 rounded-full bg-light-coral" aria-hidden="true" />}
+              </button>
+
+              <AnimatePresence>
+                {garageFilterOpen && (
+                  <motion.div
+                    id="mobile-garage-controls"
+                    className="garage-glass absolute right-0 top-12 w-[min(17.5rem,calc(100vw-1.5rem))] overflow-hidden rounded-2xl border p-2 shadow-2xl backdrop-blur-xl"
+                    initial={{ opacity: 0, y: -8, scale: 0.98 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    exit={{ opacity: 0, y: -8, scale: 0.98 }}
+                    transition={{ duration: 0.18 }}
+                  >
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setGarageView((current) => current === 'deck' ? 'grid' : 'deck');
+                        setGarageFilterOpen(false);
+                      }}
+                      className="flex min-h-10 w-full items-center justify-between gap-3 rounded-xl px-3 py-2 text-left font-mono text-[11px] font-black uppercase tracking-[.06em] text-white transition hover:bg-white/10 hover:text-light-coral"
+                    >
+                      <span>{garageView === 'deck' ? text.gridView : text.deckView}</span>
+                      {garageView === 'deck' ? <LayoutGrid className="h-4 w-4" /> : <Layers3 className="h-4 w-4" />}
+                    </button>
+                    <div className="my-1 border-t border-white/15" />
+                    <div className="max-h-[min(48svh,22rem)] space-y-1 overflow-y-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+                      {garageCategories.map((category) => (
+                        <button
+                          type="button"
+                          key={category}
+                          onClick={() => {
+                            setActiveGarageCategory(category);
+                            setGarageFilterOpen(false);
+                          }}
+                          className={`flex min-h-10 w-full items-center justify-between gap-3 rounded-xl px-3 py-2 text-left font-mono text-[11px] font-black uppercase tracking-[.06em] transition ${
+                            activeGarageCategory === category
+                              ? 'bg-light-coral text-black'
+                              : 'text-white hover:bg-white/10 hover:text-light-coral'
+                          }`}
+                          aria-current={activeGarageCategory === category ? 'true' : undefined}
+                        >
+                          <span>{category}</span>
+                          {activeGarageCategory === category && <span className="h-2 w-2 shrink-0 rounded-full bg-black" aria-hidden="true" />}
+                        </button>
+                      ))}
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+
+            <AnimatePresence>
+              {garageFilterOpen && (
+                <motion.button
+                  type="button"
+                  aria-label="Close garage controls"
+                  className="fixed inset-0 z-[139] cursor-default bg-black/10 backdrop-blur-[1px] min-[1120px]:hidden"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  onClick={() => setGarageFilterOpen(false)}
+                />
+              )}
+            </AnimatePresence>
 
             {garageView === 'deck' ? null : (
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:gap-6 lg:grid-cols-3">
@@ -1478,28 +1654,39 @@ function PortfolioApp() {
                   </div>
                 </button>
               )}
-              {filteredGaragePosts.map((post, index) => (
-                <a
-                  key={post.id}
-                  href={`/projects/${encodeURIComponent(post.slug)}`}
-                  onClick={(event) => { event.preventDefault(); openGaragePost(post); }}
-                  className="group flex min-h-[500px] flex-col rounded-3xl border border-light-ink/25 bg-transparent p-5 text-left transition hover:border-light-coral dark:border-white/25 md:min-h-[560px] md:p-7"
-                >
+              {filteredGaragePosts.map((post, index) => {
+                const presentation = getGarageProjectPresentation(post);
+                return (
+                  <a
+                    key={post.id}
+                    href={`/projects/${encodeURIComponent(post.slug)}`}
+                    onClick={(event) => { event.preventDefault(); openGaragePost(post); }}
+                    className="group flex min-h-[500px] flex-col rounded-3xl border border-light-ink/25 bg-transparent p-5 text-left transition hover:border-light-coral dark:border-white/25 md:min-h-[560px] md:p-7"
+                  >
                   <div className="mb-6 flex items-center justify-between gap-4 font-mono text-xs font-medium text-light-ink/70 dark:text-white/70">
                     <span>{post.projectDate}</span>
-                    <span className="rounded-full border border-light-ink px-3 py-1 text-[10px] font-black uppercase text-light-ink dark:border-white dark:text-white">
-                      {post.category || 'Project'}
+                    <span className="flex max-w-[65%] flex-wrap justify-end gap-1.5">
+                      {getProjectCreativeFields(post).map((creativeField) => <span key={creativeField} className="rounded-full border border-light-ink px-3 py-1 text-[10px] font-black uppercase text-light-ink dark:border-white dark:text-white">{creativeField}</span>)}
                     </span>
                   </div>
 
-                  <div className="aspect-[1.35] w-full overflow-hidden rounded-2xl bg-light-gray">
-                    <img
-                      src={post.coverImageUrl}
-                      alt={post.title}
-                      className="h-full w-full object-cover object-center transition duration-700 group-hover:scale-[1.04]"
-                      loading={index < 3 ? 'eager' : 'lazy'}
-                      decoding="async"
-                    />
+                  <div
+                    className="relative aspect-[1.35] w-full overflow-hidden rounded-2xl"
+                    style={{ background: presentation.background, color: presentation.foreground }}
+                  >
+                    {presentation.cover ? (
+                      <img
+                        src={presentation.cover}
+                        alt={post.title}
+                        className="h-full w-full object-cover object-center transition duration-700 group-hover:scale-[1.04]"
+                        loading={index < 3 ? 'eager' : 'lazy'}
+                        decoding="async"
+                      />
+                    ) : (
+                      <span className="absolute inset-0 flex items-center p-6 font-sans text-3xl font-medium leading-[.96] tracking-[-.025em] md:p-8 md:text-4xl">
+                        {post.title}
+                      </span>
+                    )}
                   </div>
 
                   <div className="flex flex-1 flex-col pt-7">
@@ -1513,25 +1700,43 @@ function PortfolioApp() {
                       {text.readMore}
                     </span>
                   </div>
-                </a>
-              ))}
+                  </a>
+                );
+              })}
               </div>
             )}
           </div>
-        </section>
+        </motion.section>
       )}
 
       {activePage === 'about' && (
-        <section id="about" className="min-h-screen bg-white pt-20 transition-colors dark:bg-[#111111] md:pt-0">
+        <motion.section
+          key="about"
+          id="about"
+          initial={prefersReducedMotion ? false : { opacity: 0, y: 14 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={prefersReducedMotion ? { opacity: 1 } : { opacity: 0, y: -10 }}
+          transition={pageTransition}
+          className="min-h-screen bg-white pt-20 transition-colors dark:bg-[#111111] md:pt-0"
+        >
           <POPage theme={theme} projects={projects} onProjectOpen={(project) => openGaragePost(project, 'about')} />
-        </section>
+        </motion.section>
       )}
 
       {SHOW_SKETCHBOOK && activePage === 'sketchbook' && (
-        <div id="sketchbook" className="min-h-screen bg-white pt-20 md:pt-24">
+        <motion.div
+          key="sketchbook"
+          id="sketchbook"
+          initial={prefersReducedMotion ? false : { opacity: 0, y: 14 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={prefersReducedMotion ? { opacity: 1 } : { opacity: 0, y: -10 }}
+          transition={pageTransition}
+          className="min-h-screen bg-white pt-20 md:pt-24"
+        >
           <SketchbookSection />
-        </div>
+        </motion.div>
       )}
+      </AnimatePresence>
       {/* Project route / modal */}
       <AnimatePresence onExitComplete={() => setProjectTransitionSlug(null)}>
         {routeProjectSlug && (
@@ -1693,7 +1898,7 @@ function PortfolioApp() {
                       <div id={selectedProject.slug === 'explo-11' ? 'explo11-project-info' : undefined} className="relative z-30 w-full scroll-mt-4 bg-white dark:bg-[#050505]">
                         <div className="mx-auto grid max-w-6xl gap-12 p-6 md:p-24 lg:grid-cols-3">
                           <div className="lg:col-span-2">
-                            <p className="font-mono text-xs font-bold uppercase tracking-[0.2em] text-light-coral">{selectedProject.category}</p>
+                            <p className="font-mono text-xs font-bold uppercase tracking-[0.2em] text-light-coral">{getProjectCreativeFields(selectedProject).join(' · ')}</p>
                             <h1 className="mt-4 text-4xl font-semibold leading-tight text-neutral-900 dark:text-white md:text-6xl">{selectedProject.title}</h1>
                             {selectedProject.slug === 'explo-11' && (
                               <h2 className="mt-7 font-mono text-xs font-bold uppercase tracking-[0.2em] text-neutral-400 dark:text-neutral-500">
@@ -1723,7 +1928,7 @@ function PortfolioApp() {
                               <h4 className="mb-4 text-xs font-bold uppercase tracking-[0.2em] text-neutral-400 dark:text-neutral-500">Project Info</h4>
                               <div className="space-y-4">
                                 <div><span className="text-[10px] uppercase tracking-widest text-neutral-400">Date</span><p className="text-sm font-bold">{selectedProject.projectDate} {selectedProject.location && `| ${selectedProject.location}`}</p></div>
-                                <div><span className="text-[10px] uppercase tracking-widest text-neutral-400">Category</span><p className="text-sm font-bold">{selectedProject.category}</p></div>
+                                <div><span className="text-[10px] uppercase tracking-widest text-neutral-400">Creative fields</span><div className="mt-1 flex flex-wrap gap-2">{getProjectCreativeFields(selectedProject).map((creativeField) => <span key={creativeField} className="rounded-full border border-neutral-200 bg-white px-3 py-1 text-[10px] font-bold uppercase tracking-widest text-neutral-600 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-300">#{creativeField}</span>)}</div></div>
                                 <div><span className="text-[10px] uppercase tracking-widest text-neutral-400">Author</span><p className="text-sm font-bold">{selectedProject.author}</p></div>
                               </div>
                             </div>

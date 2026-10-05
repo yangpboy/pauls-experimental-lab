@@ -81,7 +81,7 @@ Create Cloudflare Zero Trust Access self-hosted application routes for both:
 - `your-domain.example/admin*`
 - `your-domain.example/api/admin/*`
 
-Add an Allow policy restricted to your identity/email. The API middleware requires Cloudflare Access's `Cf-Access-Authenticated-User-Email` header and enforces `ADMIN_ALLOWED_EMAILS` (comma-separated). It fails closed with `503 ADMIN_NOT_CONFIGURED` when the allowlist is absent. Do not enable `ADMIN_DEV_BYPASS` in production.
+Add an Allow policy restricted to your identity/email. The API middleware verifies Cloudflare Access's signed `Cf-Access-Jwt-Assertion`, checks its issuer and application audience, then enforces `ADMIN_ALLOWED_EMAILS` (comma-separated) against the verified email claim. It fails closed when any required authentication setting is absent. Do not enable `ADMIN_DEV_BYPASS` in production.
 
 Protecting only `/admin*` is insufficient because the write API must also be behind Access. The middleware is defense in depth; Access must be configured at the edge.
 
@@ -92,6 +92,8 @@ Set these in Pages → Settings → Variables and Secrets for Production (and Pr
 | Name | Kind | Required | Purpose |
 | --- | --- | --- | --- |
 | `ADMIN_ALLOWED_EMAILS` | variable | required | Comma-separated Access identities permitted by the API middleware |
+| `CF_ACCESS_TEAM_DOMAIN` | variable | required | Access issuer URL, such as `https://your-team.cloudflareaccess.com` |
+| `CF_ACCESS_AUD` | variable | required | Application Audience (AUD) tag from the Access application |
 | `ADMIN_DEV_BYPASS` | variable | local only | Set `true` only in `.dev.vars`; omit in Cloudflare |
 | `ASSET_PROVIDER` | variable | for upload | `r2` or `images`; defaults to `r2` |
 | `R2_PUBLIC_BASE_URL` | variable | R2 only | Public custom-domain or `r2.dev` base URL, without trailing slash |

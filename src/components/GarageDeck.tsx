@@ -1,14 +1,8 @@
 import { ArrowDown, ArrowUp } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { ProjectSummary } from '../types/cms';
-
-const COVER_OVERRIDES: Record<string, string> = {
-  'geologic-assemblies': '/works/geologic-assemblies/assets/00-02.webp',
-  'dark-side-of-the-tini': '/works/tini/garage-cover.jpg',
-  'explo-11': '/works/explo.11/garage-cover.jpg',
-  'tube-radio': '/works/tube/garage-cover.jpg',
-  'invisible-senses': '/works/invisible/garage-cover.jpg',
-};
+import { getGarageProjectPresentation } from '../lib/garagePresentation';
+import { getProjectCreativeFields } from '../lib/projectCreativeFields';
 
 const modulo = (value: number, size: number) => ((value % size) + size) % size;
 
@@ -22,19 +16,6 @@ interface GarageDeckProps {
   loading: boolean;
   error: string | null;
 }
-
-const projectPresentation = (project: ProjectSummary) => {
-  const isPortfolio = project.slug === '2025-industrial-design-portfolio';
-  const isInvisible = project.slug === 'invisible-senses';
-  const isGeologicAssemblies = project.slug === 'geologic-assemblies';
-
-  return {
-    cover: isPortfolio ? null : (COVER_OVERRIDES[project.slug] ?? project.coverImageUrl),
-    showTitle: isPortfolio || isGeologicAssemblies,
-    background: isPortfolio ? '#FF7A2A' : isInvisible ? '#F7F4EF' : '#10131C',
-    foreground: isInvisible ? '#10131C' : '#F7F4EF',
-  };
-};
 
 export default function GarageDeck({ projects, loading, error }: GarageDeckProps) {
   const viewportRef = useRef<HTMLDivElement>(null);
@@ -191,7 +172,12 @@ export default function GarageDeck({ projects, loading, error }: GarageDeckProps
   const handlePointerDown = (event: React.PointerEvent<HTMLDivElement>) => {
     if (event.pointerType === 'mouse' && event.button !== 0) return;
     const target = event.target;
-    if (!(target instanceof Element) || !target.closest('[data-garage-card]')) return;
+    if (!(target instanceof Element)) return;
+
+    const viewportBounds = event.currentTarget.getBoundingClientRect();
+    const localY = event.clientY - viewportBounds.top;
+    const isMobileLowerDragZone = viewportBounds.width < 640 && localY >= viewportBounds.height * .42;
+    if (!target.closest('[data-garage-card]') && !isMobileLowerDragZone) return;
 
     stopAnimation();
     draggingRef.current = true;
@@ -267,7 +253,7 @@ export default function GarageDeck({ projects, loading, error }: GarageDeckProps
       onPointerMove={handlePointerMove}
       onPointerUp={finishPointer}
       onPointerCancel={finishPointer}
-      className="relative h-[100svh] min-h-[620px] w-full touch-auto overflow-hidden bg-[radial-gradient(circle_at_18%_20%,rgba(247,244,239,.08),transparent_24%),linear-gradient(180deg,#080808_0%,#030303_62%,#000_100%)] outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-light-coral"
+      className="relative h-[100svh] min-h-[620px] w-full touch-none overflow-hidden bg-[radial-gradient(circle_at_18%_20%,rgba(247,244,239,.08),transparent_24%),linear-gradient(180deg,#080808_0%,#030303_62%,#000_100%)] outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-light-coral sm:touch-auto"
       style={{ perspective: '1600px' }}
     >
       <div className="pointer-events-none absolute left-5 top-[8.5rem] z-40 font-mono text-[8px] uppercase tracking-[.08em] text-[#F7F4EF]/70 md:left-6 md:top-24 md:text-[9px]">
@@ -302,7 +288,7 @@ export default function GarageDeck({ projects, loading, error }: GarageDeckProps
 
       <div className="absolute inset-0 z-10 [transform-style:preserve-3d]">
         {projects.map((project, index) => {
-          const presentation = projectPresentation(project);
+          const presentation = getGarageProjectPresentation(project);
           return (
             <a
               key={project.id}
@@ -330,7 +316,7 @@ export default function GarageDeck({ projects, loading, error }: GarageDeckProps
               )}
               <div className="relative grid h-full grid-cols-[1.05fr_.95fr] grid-rows-[auto_1fr_auto] gap-3 p-4 font-mono uppercase md:p-6">
                 <div className="text-[9px] tracking-[.05em] opacity-80 md:text-[10px]">
-                  {String(index + 1).padStart(2, '0')} / {project.category || 'Project'}
+                  {String(index + 1).padStart(2, '0')} / {getProjectCreativeFields(project).join(' / ')}
                 </div>
                 <div className="text-right text-[9px] tracking-[.05em] opacity-70 md:text-[10px]">{project.projectDate}</div>
 

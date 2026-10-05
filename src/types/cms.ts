@@ -55,6 +55,7 @@ export interface ProjectSummary {
   summary: string;
   coverImageUrl: string;
   category: string;
+  creativeFields: string[];
   projectDate: string;
   location: string;
   author: string;
@@ -78,6 +79,7 @@ export interface ProjectInput {
   summary: string;
   coverImageUrl: string;
   category: string;
+  creativeFields: string[];
   projectDate: string;
   location: string;
   author: string;

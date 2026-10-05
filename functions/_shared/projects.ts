@@ -19,6 +19,7 @@ interface ProjectRow {
   summary: string;
   cover_image_url: string;
   category: string;
+  creative_fields_json: string;
   project_date: string;
   location: string;
   author: string;
@@ -46,7 +47,7 @@ interface EngagementRow {
 }
 
 const PROJECT_COLUMNS = `
-  id, slug, title, summary, cover_image_url, category, project_date, location,
+  id, slug, title, summary, cover_image_url, category, creative_fields_json, project_date, location,
   author, tools_json, status, sort_order, likes_count, shares_count,
   published_at, created_at, updated_at
 `;
@@ -78,26 +79,51 @@ const mapBlock = (row: BlockRow) => ({
   content: safeJsonObject(row.content_json),
 });
 
-const mapProject = (row: ProjectRow, blocks?: BlockRow[]) => ({
-  id: row.id,
-  slug: row.slug,
-  title: row.title,
-  summary: row.summary,
-  coverImageUrl: row.cover_image_url,
-  category: row.category,
-  projectDate: row.project_date,
-  location: row.location,
-  author: row.author,
-  tools: safeJsonArray(row.tools_json),
-  status: row.status,
-  sortOrder: row.sort_order,
-  likesCount: row.likes_count,
-  sharesCount: row.shares_count,
-  publishedAt: row.published_at,
-  createdAt: row.created_at,
-  updatedAt: row.updated_at,
-  ...(blocks ? { blocks: blocks.map(mapBlock) } : {}),
-});
+const normalizeStringArray = (value: unknown): string[] => {
+  if (!Array.isArray(value)) return [];
+
+  const seen = new Set<string>();
+  return value
+    .filter((item): item is string => typeof item === 'string')
+    .map((item) => item.trim())
+    .filter((item) => {
+      if (!item) return false;
+      const key = item.toLocaleLowerCase();
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
+};
+
+const mapProject = (row: ProjectRow, blocks?: BlockRow[]) => {
+  const storedCreativeFields = normalizeStringArray(safeJsonArray(row.creative_fields_json));
+  const creativeFields = storedCreativeFields.length > 0
+    ? storedCreativeFields
+    : normalizeStringArray(row.category.split(','));
+  const normalizedCreativeFields = creativeFields.length > 0 ? creativeFields : ['Uncategorized'];
+
+  return {
+    id: row.id,
+    slug: row.slug,
+    title: row.title,
+    summary: row.summary,
+    coverImageUrl: row.cover_image_url,
+    category: normalizedCreativeFields[0],
+    creativeFields: normalizedCreativeFields,
+    projectDate: row.project_date,
+    location: row.location,
+    author: row.author,
+    tools: safeJsonArray(row.tools_json),
+    status: row.status,
+    sortOrder: row.sort_order,
+    likesCount: row.likes_count,
+    sharesCount: row.shares_count,
+    publishedAt: row.published_at,
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
+    ...(blocks ? { blocks: blocks.map(mapBlock) } : {}),
+  };
+};
 
 export const listProjects = async (db: D1Database, includeDrafts = false, includeBlocks = false) => {
   const where = includeDrafts ? '' : "WHERE status = 'published'";
@@ -242,16 +268,19 @@ export const validateProjectPayload = (value: unknown): ProjectPayload => {
 
   const rawStatus = object.status;
   const status: ProjectStatus = rawStatus === 'published' ? 'published' : 'draft';
-  const tools = Array.isArray(object.tools)
-    ? object.tools.filter((tool): tool is string => typeof tool === 'string').map((tool) => tool.trim()).filter(Boolean)
-    : [];
+  const tools = normalizeStringArray(object.tools);
+  const requestedCreativeFields = normalizeStringArray(object.creativeFields);
+  const legacyCreativeFields = normalizeStringArray(stringField(object, 'category').split(','));
+  const creativeFields = (requestedCreativeFields.length > 0 ? requestedCreativeFields : legacyCreativeFields).slice(0, 12);
+  const normalizedCreativeFields = creativeFields.length > 0 ? creativeFields : ['Uncategorized'];
 
   return {
     slug,
     title,
     summary: stringField(object, 'summary'),
     coverImageUrl: stringField(object, 'coverImageUrl'),
-    category: stringField(object, 'category', 'Uncategorized'),
+    category: normalizedCreativeFields[0],
+    creativeFields: normalizedCreativeFields,
     projectDate: stringField(object, 'projectDate'),
     location: stringField(object, 'location'),
     author: stringField(object, 'author'),
@@ -283,12 +312,12 @@ export const createProject = async (db: D1Database, payload: ProjectPayload) => 
   const statements = [
     db.prepare(`
       INSERT INTO projects (
-        id, slug, title, summary, cover_image_url, category, project_date, location,
+        id, slug, title, summary, cover_image_url, category, creative_fields_json, project_date, location,
         author, tools_json, status, sort_order, published_at, created_at, updated_at
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `).bind(
       id, payload.slug, payload.title, payload.summary, payload.coverImageUrl,
-      payload.category, payload.projectDate, payload.location, payload.author,
+      payload.category, JSON.stringify(payload.creativeFields), payload.projectDate, payload.location, payload.author,
       JSON.stringify(payload.tools), payload.status, payload.sortOrder,
       publishedAt, now, now,
     ),
@@ -310,13 +339,13 @@ export const updateProject = async (db: D1Database, id: string, payload: Project
   const statements = [
     db.prepare(`
       UPDATE projects SET
-        slug = ?, title = ?, summary = ?, cover_image_url = ?, category = ?,
+        slug = ?, title = ?, summary = ?, cover_image_url = ?, category = ?, creative_fields_json = ?,
         project_date = ?, location = ?, author = ?, tools_json = ?, status = ?,
         sort_order = ?, published_at = ?, updated_at = ?
       WHERE id = ?
     `).bind(
       payload.slug, payload.title, payload.summary, payload.coverImageUrl,
-      payload.category, payload.projectDate, payload.location, payload.author,
+      payload.category, JSON.stringify(payload.creativeFields), payload.projectDate, payload.location, payload.author,
       JSON.stringify(payload.tools), payload.status, payload.sortOrder,
       publishedAt, now, id,
     ),

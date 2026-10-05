@@ -8,6 +8,8 @@ export interface Env {
   CLOUDFLARE_IMAGES_VARIANT?: string;
   ADMIN_ALLOWED_EMAILS?: string;
   ADMIN_DEV_BYPASS?: string;
+  CF_ACCESS_TEAM_DOMAIN?: string;
+  CF_ACCESS_AUD?: string;
 }
 
 export type ProjectStatus = 'draft' | 'published';
@@ -35,6 +37,7 @@ export interface ProjectPayload {
   summary: string;
   coverImageUrl: string;
   category: string;
+  creativeFields: string[];
   projectDate: string;
   location: string;
   author: string;

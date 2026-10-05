@@ -21,7 +21,7 @@ export default function TiniWebCaseStudy() {
         aria-labelledby="tini-web-title"
       >
         <video
-          className="absolute inset-0 -z-20 h-full w-full bg-black object-contain object-right motion-reduce:hidden"
+          className="absolute inset-0 -z-20 h-full w-full origin-right scale-[1.3] bg-black object-contain object-right motion-reduce:hidden"
           autoPlay
           muted
           loop

@@ -23,3 +23,7 @@ R2_PUBLIC_BASE_URL = "https://media.paul-lab.com"
 # Defence in depth: the API independently checks the email injected by
 # Cloudflare Access. This is not a browser-exposed secret.
 ADMIN_ALLOWED_EMAILS = "yangpboy@gmail.com"
+# Access injects a signed JWT on protected requests. The API verifies its
+# signature and audience before trusting the email claim.
+CF_ACCESS_TEAM_DOMAIN = "https://crimson-dream-8c23.cloudflareaccess.com"
+CF_ACCESS_AUD = "6b349295703cc43d5242bb566569bea9ce8ea0a58d1e42f5a490bc34ec42548f"
