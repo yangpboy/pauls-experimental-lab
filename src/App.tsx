@@ -679,7 +679,7 @@ function PortfolioApp() {
   const prefersReducedMotion = useReducedMotion();
   const pageTransition = prefersReducedMotion
     ? { duration: 0 }
-    : { duration: 0.42, ease: [0.22, 1, 0.36, 1] as const };
+    : { duration: 0.24, ease: [0.22, 1, 0.36, 1] as const };
   const themeToggleIcon = colorMode === 'light' ? '/icons/B_ dark.png' : '/icons/W_ light.png';
   const text = language === 'zh'
     ? {
@@ -1211,13 +1211,13 @@ function PortfolioApp() {
         ))}
       </div>
 
-      <AnimatePresence mode="popLayout" initial={false}>
+      <AnimatePresence mode="wait" initial={false}>
       {activePage === 'head' && (
         <motion.div
           key="head"
-          initial={prefersReducedMotion ? false : { opacity: 0, y: 14 }}
-          animate={{ opacity: 1, y: 0 }}
-          exit={prefersReducedMotion ? { opacity: 1 } : { opacity: 0, y: -10 }}
+          initial={prefersReducedMotion ? false : { opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={prefersReducedMotion ? { opacity: 1 } : { opacity: 0 }}
           transition={pageTransition}
         >
           <section
@@ -1401,9 +1401,9 @@ function PortfolioApp() {
         <motion.section
           key="garage"
           id="garage"
-          initial={prefersReducedMotion ? false : { opacity: 0, y: 14 }}
-          animate={{ opacity: 1, y: 0 }}
-          exit={prefersReducedMotion ? { opacity: 1 } : { opacity: 0, y: -10 }}
+          initial={prefersReducedMotion ? false : { opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={prefersReducedMotion ? { opacity: 1 } : { opacity: 0 }}
           transition={pageTransition}
           className={`relative min-h-screen overflow-hidden ${
             garageView === 'deck'
@@ -1713,9 +1713,9 @@ function PortfolioApp() {
         <motion.section
           key="about"
           id="about"
-          initial={prefersReducedMotion ? false : { opacity: 0, y: 14 }}
-          animate={{ opacity: 1, y: 0 }}
-          exit={prefersReducedMotion ? { opacity: 1 } : { opacity: 0, y: -10 }}
+          initial={prefersReducedMotion ? false : { opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={prefersReducedMotion ? { opacity: 1 } : { opacity: 0 }}
           transition={pageTransition}
           className="min-h-screen bg-white pt-20 transition-colors dark:bg-[#111111] md:pt-0"
         >
@@ -1727,9 +1727,9 @@ function PortfolioApp() {
         <motion.div
           key="sketchbook"
           id="sketchbook"
-          initial={prefersReducedMotion ? false : { opacity: 0, y: 14 }}
-          animate={{ opacity: 1, y: 0 }}
-          exit={prefersReducedMotion ? { opacity: 1 } : { opacity: 0, y: -10 }}
+          initial={prefersReducedMotion ? false : { opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={prefersReducedMotion ? { opacity: 1 } : { opacity: 0 }}
           transition={pageTransition}
           className="min-h-screen bg-white pt-20 md:pt-24"
         >
