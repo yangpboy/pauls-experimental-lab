@@ -20,6 +20,7 @@ import {
   Quote,
   Save,
   Settings2,
+  UserRound,
   Trash2,
   Upload,
   Video,
@@ -774,6 +775,7 @@ export default function AdminApp() {
             <p className="flex items-center gap-1.5 text-[11px] text-[#737373]">{isDirty ? <><span className="h-1.5 w-1.5 rounded-full bg-[#e3a008]" />Unsaved changes</> : <><Check size={12} />All changes saved</>}</p>
           </div>
           <div className="ml-auto flex items-center gap-2">
+            <a href="/admin/about" className={`${secondaryButtonClass} px-3 sm:px-4`}><UserRound size={15} /><span className="hidden sm:inline">Edit About</span></a>
             {draft && <button type="button" className="grid h-10 w-10 place-items-center rounded-full border border-[#d8d8d8] bg-white lg:hidden" onClick={() => { setInspectorTab('details'); setMobileInspectorOpen(true); }} aria-label="Open project settings"><Settings2 size={16} /></button>}
             {selectedProject?.status === 'published' && <a href={`/projects/${encodeURIComponent(selectedProject.slug)}`} target="_blank" rel="noreferrer" className={`${secondaryButtonClass} hidden sm:inline-flex`}><Eye size={15} /> Preview</a>}
             {draft && <>
@@ -788,6 +790,7 @@ export default function AdminApp() {
         <aside className="hidden border-b border-[#dedede] bg-white 2xl:sticky 2xl:top-16 2xl:block 2xl:h-[calc(100vh-65px)] 2xl:overflow-y-auto 2xl:border-b-0 2xl:border-r">
           <div className="p-4">
             <button type="button" className={`${primaryButtonClass} w-full`} onClick={createNew}><Plus size={17} /> Create a project</button>
+            <a href="/admin/about" className={`${secondaryButtonClass} mt-2 w-full`}><UserRound size={16} /> Edit About page</a>
             <div className="mt-6 flex items-center justify-between">
               <div><p className="text-sm font-semibold">Your projects</p><p className="mt-0.5 text-xs text-[#737373]">{projects.length} total</p></div>
               {orderDirty && <button type="button" className="text-xs font-semibold text-[#1769ff] hover:underline" disabled={saving} onClick={() => void saveOrder()}>Save order</button>}

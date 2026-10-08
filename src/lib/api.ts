@@ -1,4 +1,5 @@
 import type { ApiEnvelope, ApiErrorEnvelope, Project, ProjectInput, ProjectSummary } from '../types/cms';
+import type { AboutContent } from '../../shared/aboutContent';
 
 export type ProjectEngagement = Pick<ProjectSummary, 'likesCount' | 'sharesCount'>;
 
@@ -59,6 +60,18 @@ export const projectsApi = {
   like: (slug: string) => request<ProjectEngagement>(`/api/projects/${encodeURIComponent(slug)}/like`, { method: 'POST' }),
   unlike: (slug: string) => request<ProjectEngagement>(`/api/projects/${encodeURIComponent(slug)}/like`, { method: 'DELETE' }),
   share: (slug: string) => request<ProjectEngagement>(`/api/projects/${encodeURIComponent(slug)}/share`, { method: 'POST' }),
+};
+
+export const aboutApi = {
+  get: () => request<AboutContent>('/api/about'),
+};
+
+export const adminAboutApi = {
+  get: () => request<AboutContent>('/api/admin/about'),
+  update: (content: AboutContent) => request<AboutContent>('/api/admin/about', {
+    method: 'PUT',
+    body: JSON.stringify(content),
+  }),
 };
 
 export const adminProjectsApi = {

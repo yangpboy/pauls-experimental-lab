@@ -14,11 +14,13 @@ import Explo11Film from './components/Explo11Film';
 import Explo11Index from './components/Explo11Index';
 import AdminApp from './admin/AdminApp';
 import AdminLogin from './admin/AdminLogin';
-import { CmsApiError, projectsApi } from './lib/api';
+import AboutEditor from './admin/AboutEditor';
+import { aboutApi, CmsApiError, projectsApi } from './lib/api';
 import { getGarageProjectPresentation } from './lib/garagePresentation';
 import { getProjectCreativeFields } from './lib/projectCreativeFields';
 import { applyHomeSeo, applyProjectSeo, getProjectSeoDescription } from './lib/seo';
 import type { Project, ProjectSummary } from './types/cms';
+import { DEFAULT_ABOUT_CONTENT, type AboutContent, type PortfolioLanguage } from '../shared/aboutContent';
 
 const PlasterModel3D = lazy(() => import('./components/PlasterModel3D'));
 const LowPerformanceHead = lazy(() => import('./components/LowPerformanceHead'));
@@ -139,10 +141,14 @@ const FadeIn = ({ children, delay = 0, direction = 'up', className = '' }: { chi
 // PO Page Component for Paul's Info
 const POPage = ({ 
   theme,
+  language,
+  content,
   projects,
   onProjectOpen,
 }: { 
   theme: 'dark' | 'light';
+  language: PortfolioLanguage;
+  content: AboutContent;
   projects: ProjectSummary[];
   onProjectOpen: (project: ProjectSummary) => void;
 }) => {
@@ -153,6 +159,7 @@ const POPage = ({
   const startX = useRef(0);
   const scrollLeft = useRef(0);
   const [timelineScroll, setTimelineScroll] = useState({ progress: 0, visibleRatio: 1 });
+  const copy = content[language];
 
   const timelinePosts = useMemo(
     () => [...projects].sort((a, b) => {
@@ -201,7 +208,7 @@ const POPage = ({
   };
 
   return (
-    <div className={`w-full min-h-screen relative z-10 transition-colors ${theme === 'dark' ? 'bg-[#111111] text-white' : 'bg-white text-[#333333]'}`}>
+    <div lang={language === 'zh' ? 'zh-Hant' : 'en'} className={`w-full min-h-screen relative z-10 transition-colors ${theme === 'dark' ? 'bg-[#111111] text-white' : 'bg-white text-[#333333]'}`}>
       {/* Top Section: Split View */}
       <div className="flex flex-col md:flex-row min-h-screen w-full relative z-10">
             {/* Left: Image & Name */}
@@ -226,7 +233,7 @@ const POPage = ({
                   transition={{ delay: 0.4 }}
                   className="text-white/70 mt-4 font-mono text-sm tracking-widest uppercase relative z-20"
                 >
-                  Industrial Designer & Researcher
+                  {copy.role}
                 </motion.p>
               </div>
             </div>
@@ -240,24 +247,24 @@ const POPage = ({
                   {/* Intro */}
                   <div>
                     <h3 className={`text-2xl md:text-3xl font-light leading-tight mb-6 ${theme === 'dark' ? 'text-white' : 'text-black'}`}>
-                      Bridging the gap between <span className="font-medium italic">engineering precision</span> and <span className="font-medium italic">artistic expression</span>.
+                      {copy.introLead} <span className="font-medium italic">{copy.introEngineering}</span> {copy.introJoin} <span className="font-medium italic">{copy.introArt}</span>{copy.introEnd}
                     </h3>
                   </div>
 
                   {/* Details Grid */}
                   <div className="grid min-w-0 grid-cols-2 gap-6 border-y border-current/10 py-8 md:grid-cols-1 lg:grid-cols-2 lg:gap-8">
                     <div>
-                      <h4 className={`text-xs font-bold tracking-widest uppercase mb-4 ${theme === 'dark' ? 'text-white/50' : 'text-black/50'}`}>Based In</h4>
-                      <p className={`font-medium ${theme === 'dark' ? 'text-white' : 'text-black'}`}>Taiwan & UK</p>
+                       <h4 className={`text-xs font-bold tracking-widest uppercase mb-4 ${theme === 'dark' ? 'text-white/50' : 'text-black/50'}`}>{copy.basedInLabel}</h4>
+                       <p className={`font-medium ${theme === 'dark' ? 'text-white' : 'text-black'}`}>{copy.basedIn}</p>
                     </div>
                     <div>
-                      <h4 className={`text-xs font-bold tracking-widest uppercase mb-4 ${theme === 'dark' ? 'text-white/50' : 'text-black/50'}`}>Education</h4>
-                      <p className={`break-words font-medium ${theme === 'dark' ? 'text-white' : 'text-black'}`}>Imperial College London, Royal College Of Art</p>
+                       <h4 className={`text-xs font-bold tracking-widest uppercase mb-4 ${theme === 'dark' ? 'text-white/50' : 'text-black/50'}`}>{copy.educationLabel}</h4>
+                       <p className={`break-words font-medium ${theme === 'dark' ? 'text-white' : 'text-black'}`}>{copy.education}</p>
                     </div>
                     <div className="col-span-2 md:col-span-1 lg:col-span-2">
-                      <h4 className={`text-xs font-bold tracking-widest uppercase mb-4 ${theme === 'dark' ? 'text-white/50' : 'text-black/50'}`}>Focus Areas</h4>
+                       <h4 className={`text-xs font-bold tracking-widest uppercase mb-4 ${theme === 'dark' ? 'text-white/50' : 'text-black/50'}`}>{copy.focusAreasLabel}</h4>
                       <div className="flex flex-wrap gap-2">
-                        {['Industrial Design', 'User Research', 'UI/UX', 'Prototyping'].map(skill => (
+                         {copy.focusAreas.map(skill => (
                           <span key={skill} className={`px-3 py-1 text-xs rounded-full border ${theme === 'dark' ? 'border-white/20 text-white/80' : 'border-black/20 text-black/80'}`}>
                             {skill}
                           </span>
@@ -268,12 +275,7 @@ const POPage = ({
 
                   {/* Bio */}
                   <div className={`space-y-6 text-base md:text-lg leading-relaxed ${theme === 'dark' ? 'text-gray-400' : 'text-gray-600'}`}>
-                    <p>
-                      With a background shaped by both engineering and art, I bring a unique perspective that balances craftsmanship, creativity, and human-centered experiences.
-                    </p>
-                    <p>
-                      My journey from Taiwan to the UK has broadened my view of how products, users, and environments connect across cultures. I believe that design is not just about problem-solving; it's about enriching life by offering more possibilities and choices.
-                    </p>
+                    {copy.bio.map((paragraph) => <p key={paragraph}>{paragraph}</p>)}
                   </div>
                 </div>
               </FadeIn>
@@ -287,7 +289,7 @@ const POPage = ({
                     rel="noopener noreferrer"
                     className={`group flex items-center gap-3 px-8 py-4 rounded-full border transition-all ${theme === 'dark' ? 'border-white/20 hover:bg-white text-white hover:text-black' : 'border-black/20 hover:bg-black text-black hover:text-white'}`}
                   >
-                    <span className="text-sm font-bold tracking-widest uppercase">View Resume</span>
+                    <span className="text-sm font-bold tracking-widest uppercase">{copy.resume}</span>
                     <ArrowUpRight size={16} className="group-hover:translate-x-1 group-hover:-translate-y-1 transition-transform" />
                   </a>
 
@@ -308,54 +310,43 @@ const POPage = ({
             <div className="relative z-10 w-full pb-24">
               <FadeIn>
                 <h2 className={`font-mono text-4xl md:text-8xl font-black tracking-normal mb-12 md:mb-16 ${theme === 'light' ? 'text-light-coral' : ''}`}>
-                  WHAT<br/>I DO
+                  {copy.whatIDo[0]}<br/>{copy.whatIDo[1]}
                 </h2>
               </FadeIn>
               
               <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-24">
-                <FadeIn delay={0.2}>
-                  <div className={`border p-8 md:p-12 rounded-[2rem] md:rounded-[3rem] transition-all group h-full ${theme === 'dark' ? 'bg-[#0a0a0a] border-white/5 hover:border-light-teal/50' : 'glass hover:border-light-teal'}`}>
-                    <h3 className={`font-mono text-2xl md:text-3xl font-bold mb-4 md:mb-6 transition-colors ${theme === 'dark' ? 'group-hover:text-light-teal' : 'text-light-ink group-hover:text-light-teal'}`}>DESIGN</h3>
-                    <p className={`mb-6 md:mb-8 leading-relaxed text-sm md:text-base ${theme === 'dark' ? 'text-gray-400' : 'text-light-ink/70'}`}>
-                      Crafting intuitive user interfaces and engaging user experiences with a focus on aesthetics.
-                    </p>
-                    <div className="flex flex-wrap gap-2 md:gap-3">
-                      {['UI/UX', 'Figma', 'Interaction', '3D Modeling'].map(tech => (
-                        <span key={tech} className={`px-2 py-1 text-xs rounded-md ${theme === 'dark' ? 'bg-neutral-800 text-neutral-400' : 'bg-neutral-200 text-neutral-600'}`}>{tech}</span>
-                      ))}
-                    </div>
-                  </div>
-                </FadeIn>
-                <FadeIn delay={0.4}>
-                  <div className={`border p-8 md:p-12 rounded-[2rem] md:rounded-[3rem] transition-all group h-full ${theme === 'dark' ? 'bg-[#0a0a0a] border-white/5 hover:border-light-coral/50' : 'glass hover:border-light-coral'}`}>
-                    <h3 className={`font-mono text-2xl md:text-3xl font-bold mb-4 md:mb-6 transition-colors ${theme === 'dark' ? 'group-hover:text-light-coral' : 'text-light-ink group-hover:text-light-coral'}`}>RESEARCH</h3>
-                    <p className={`mb-6 md:mb-8 leading-relaxed text-sm md:text-base ${theme === 'dark' ? 'text-gray-400' : 'text-light-ink/70'}`}>
-                      Conducting in-depth user research and usability testing to uncover insights that drive meaningful design decisions.
-                    </p>
-                    <div className="flex flex-wrap gap-2 md:gap-3">
-                      {['User Research', 'Usability Testing', 'Data Analysis', 'Field Study'].map(tech => (
-                        <span key={tech} className={`px-2 py-1 text-xs rounded-md ${theme === 'dark' ? 'bg-neutral-800 text-neutral-400' : 'bg-neutral-200 text-neutral-600'}`}>{tech}</span>
-                      ))}
-                    </div>
-                  </div>
-                </FadeIn>
-                <FadeIn delay={0.6}>
-                  <div className={`border p-8 md:p-12 rounded-[2rem] md:rounded-[3rem] transition-all group h-full ${theme === 'dark' ? 'bg-[#0a0a0a] border-white/5 hover:border-light-yellow/50' : 'glass hover:border-light-yellow'}`}>
-                    <h3 className={`font-mono text-2xl md:text-3xl font-bold mb-4 md:mb-6 transition-colors ${theme === 'dark' ? 'group-hover:text-light-yellow' : 'text-light-ink group-hover:text-light-yellow'}`}>EXERCISE</h3>
-                    <p className={`mb-6 md:mb-8 leading-relaxed text-sm md:text-base ${theme === 'dark' ? 'text-gray-400' : 'text-light-ink/70'}`}>
-                      Exercising every day is good for your physical and mental health.
-                    </p>
-                    <div className="flex flex-wrap gap-2 md:gap-3">
-                      {['Basketball', 'Table Tennis', 'Badminton', 'Cycling', 'Jogging', 'Mountain Climbing', 'Swimming'].map(tech => (
-                        <span key={tech} className={`px-2 py-1 text-xs rounded-md ${theme === 'dark' ? 'bg-neutral-800 text-neutral-400' : 'bg-neutral-200 text-neutral-600'}`}>{tech}</span>
-                      ))}
-                    </div>
-                  </div>
-                </FadeIn>
+                {copy.capabilities.map((capability, index) => {
+                  const accentClasses = [
+                    theme === 'dark' ? 'hover:border-light-teal/50' : 'hover:border-light-teal',
+                    theme === 'dark' ? 'hover:border-light-coral/50' : 'hover:border-light-coral',
+                    theme === 'dark' ? 'hover:border-light-yellow/50' : 'hover:border-light-yellow',
+                  ];
+                  const titleClasses = [
+                    'group-hover:text-light-teal',
+                    'group-hover:text-light-coral',
+                    'group-hover:text-light-yellow',
+                  ];
+
+                  return (
+                    <FadeIn key={capability.title} delay={(index + 1) * 0.2}>
+                      <div className={`border p-8 md:p-12 rounded-[2rem] md:rounded-[3rem] transition-all group h-full ${theme === 'dark' ? 'bg-[#0a0a0a] border-white/5' : 'glass'} ${accentClasses[index]}`}>
+                        <h3 className={`font-mono text-2xl md:text-3xl font-bold mb-4 md:mb-6 transition-colors ${theme === 'dark' ? '' : 'text-light-ink'} ${titleClasses[index]}`}>{capability.title}</h3>
+                        <p className={`mb-6 md:mb-8 leading-relaxed text-sm md:text-base ${theme === 'dark' ? 'text-gray-400' : 'text-light-ink/70'}`}>
+                          {capability.description}
+                        </p>
+                        <div className="flex flex-wrap gap-2 md:gap-3">
+                          {capability.tags.map(tech => (
+                            <span key={tech} className={`px-2 py-1 text-xs rounded-md ${theme === 'dark' ? 'bg-neutral-800 text-neutral-400' : 'bg-neutral-200 text-neutral-600'}`}>{tech}</span>
+                          ))}
+                        </div>
+                      </div>
+                    </FadeIn>
+                  );
+                })}
               </div>
 
               <FadeIn>
-                <h2 className={`font-mono text-4xl md:text-7xl font-black tracking-normal mb-12 md:mb-16 ${theme === 'light' ? 'text-light-coral' : ''}`}>My Works</h2>
+                <h2 className={`font-mono text-4xl md:text-7xl font-black tracking-normal mb-12 md:mb-16 ${theme === 'light' ? 'text-light-coral' : ''}`}>{copy.worksTitle}</h2>
               </FadeIn>
               
               <div className="relative w-screen left-1/2 -translate-x-1/2 mt-12 md:mt-24">
@@ -366,7 +357,7 @@ const POPage = ({
                 <div 
                   ref={scrollContainerRef}
                   role="region"
-                  aria-label="Project timeline. Drag or swipe horizontally to explore all projects."
+                  aria-label={copy.timelineLabel}
                   tabIndex={0}
                   className="hide-scrollbar relative cursor-grab touch-pan-y overflow-x-auto overflow-y-hidden overscroll-x-contain outline-none active:cursor-grabbing focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-light-coral"
                   onScroll={updateTimelineScroll}
@@ -451,7 +442,7 @@ const POPage = ({
                               <motion.a
                                 href={`/projects/${encodeURIComponent(post.slug)}`}
                                 layoutId={`about-project-card-${post.slug}`}
-                                aria-label={`Open ${post.title}`}
+                                aria-label={`${copy.openProject} ${post.title}`}
                                 onClick={(event) => {
                                   event.preventDefault();
                                   if (suppressCardClick.current) {
@@ -513,7 +504,7 @@ const POPage = ({
                       <ChevronRight className={`h-4 w-4 shrink-0 ${theme === 'dark' ? 'text-white/45' : 'text-black/45'}`} />
                     </div>
                     <p className={`timeline-indicator-label mt-2 text-center font-mono text-[9px] font-bold uppercase tracking-[0.16em] sm:text-[10px] sm:tracking-[0.18em] ${theme === 'dark' ? 'text-white/45' : 'text-black/45'}`}>
-                      Drag or swipe to explore
+                      {copy.timelineHint}
                     </p>
                   </div>
                 </div>
@@ -629,6 +620,7 @@ const SketchbookSection = () => {
 
 export default function App() {
   const path = window.location.pathname.replace(/\/+$/, '') || '/';
+  if (path === '/admin/about') return <AboutEditor />;
   if (path.startsWith('/admin')) return <AdminApp />;
   if (path === '/login') return <AdminLogin />;
   return <PortfolioApp />;
@@ -652,7 +644,14 @@ function PortfolioApp() {
 
     return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
   });
-  const [language, setLanguage] = useState<'zh' | 'en'>('en');
+  const [language, setLanguage] = useState<PortfolioLanguage>(() => {
+    try {
+      return window.localStorage.getItem('portfolio-language') === 'zh' ? 'zh' : 'en';
+    } catch {
+      return 'en';
+    }
+  });
+  const [aboutContent, setAboutContent] = useState<AboutContent>(() => structuredClone(DEFAULT_ABOUT_CONTENT));
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [projects, setProjects] = useState<ProjectSummary[]>([]);
@@ -674,6 +673,18 @@ function PortfolioApp() {
   const [isThemeModeHintVisible, setIsThemeModeHintVisible] = useState(false);
   const projectScrollRef = useRef<HTMLDivElement>(null);
   const pageScrollPositionRef = useRef(0);
+
+  useEffect(() => {
+    let cancelled = false;
+    aboutApi.get()
+      .then((content) => {
+        if (!cancelled) setAboutContent(content);
+      })
+      .catch((error: unknown) => {
+        console.error('Unable to load About content. Using the built-in copy.', error);
+      });
+    return () => { cancelled = true; };
+  }, []);
 
   const theme = colorMode;
   const prefersReducedMotion = useReducedMotion();
@@ -810,6 +821,16 @@ function PortfolioApp() {
       // Theme switching should still work when persistence is blocked.
     }
   }, [colorMode]);
+
+  useEffect(() => {
+    document.documentElement.lang = language === 'zh' ? 'zh-Hant' : 'en';
+
+    try {
+      window.localStorage.setItem('portfolio-language', language);
+    } catch {
+      // Language switching should still work when persistence is blocked.
+    }
+  }, [language]);
 
   useEffect(() => {
     if (!garageFilterOpen) return;
@@ -1719,7 +1740,7 @@ function PortfolioApp() {
           transition={pageTransition}
           className="min-h-screen bg-white pt-20 transition-colors dark:bg-[#111111] md:pt-0"
         >
-          <POPage theme={theme} projects={projects} onProjectOpen={(project) => openGaragePost(project, 'about')} />
+          <POPage theme={theme} language={language} content={aboutContent} projects={projects} onProjectOpen={(project) => openGaragePost(project, 'about')} />
         </motion.section>
       )}
 
