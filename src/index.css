@@ -180,3 +180,71 @@ body {
   font-size: 1.05rem;
   line-height: 1.45;
 }
+/* About content Markdown is shared by the public page and private editor preview. */
+.about-markdown-inline {
+  display: inline;
+}
+
+.about-markdown-inline a,
+.about-markdown-block a {
+  text-decoration: underline;
+  text-underline-offset: 0.18em;
+}
+
+.about-markdown-inline code,
+.about-markdown-block code {
+  border-radius: 0.25rem;
+  background: rgb(127 127 127 / 18%);
+  padding: 0.08em 0.3em;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 0.9em;
+}
+
+.about-markdown-block {
+  display: block;
+  overflow-wrap: anywhere;
+}
+
+.about-markdown-block > :not(:first-child) {
+  margin-top: 0.85em;
+}
+
+.about-markdown-block h1,
+.about-markdown-block h2,
+.about-markdown-block h3 {
+  color: inherit;
+  font-weight: 700;
+  line-height: 1.25;
+}
+
+.about-markdown-block h1 { font-size: 1.45em; }
+.about-markdown-block h2 { font-size: 1.25em; }
+.about-markdown-block h3 { font-size: 1.1em; }
+
+.about-markdown-block ul,
+.about-markdown-block ol {
+  padding-left: 1.25em;
+}
+
+.about-markdown-block ul { list-style: disc; }
+.about-markdown-block ol { list-style: decimal; }
+.about-markdown-block li + li { margin-top: 0.3em; }
+
+.about-markdown-block blockquote {
+  border-left: 2px solid currentColor;
+  padding-left: 1em;
+  opacity: 0.82;
+}
+
+.about-markdown-block table {
+  min-width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9em;
+}
+
+.about-markdown-block th,
+.about-markdown-block td {
+  border: 1px solid rgb(127 127 127 / 35%);
+  padding: 0.5em 0.65em;
+  text-align: left;
+}

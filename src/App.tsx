@@ -12,6 +12,7 @@ import GeologicAssembliesExperience from './components/GeologicAssembliesExperie
 import GarageDeck from './components/GarageDeck';
 import Explo11Film from './components/Explo11Film';
 import Explo11Index from './components/Explo11Index';
+import MarkdownText, { markdownToPlainText } from './components/MarkdownText';
 import AdminApp from './admin/AdminApp';
 import AdminLogin from './admin/AdminLogin';
 import AboutEditor from './admin/AboutEditor';
@@ -233,7 +234,7 @@ const POPage = ({
                   transition={{ delay: 0.4 }}
                   className="text-white/70 mt-4 font-mono text-sm tracking-widest uppercase relative z-20"
                 >
-                  {copy.role}
+                  <MarkdownText inline>{copy.role}</MarkdownText>
                 </motion.p>
               </div>
             </div>
@@ -247,26 +248,29 @@ const POPage = ({
                   {/* Intro */}
                   <div>
                     <h3 className={`text-2xl md:text-3xl font-light leading-tight mb-6 ${theme === 'dark' ? 'text-white' : 'text-black'}`}>
-                      {copy.introLead} <span className="font-medium italic">{copy.introEngineering}</span> {copy.introJoin} <span className="font-medium italic">{copy.introArt}</span>{copy.introEnd}
+                      <MarkdownText inline>{copy.introLead}</MarkdownText>{' '}
+                      <span className="font-medium italic"><MarkdownText inline>{copy.introEngineering}</MarkdownText></span>{' '}
+                      <MarkdownText inline>{copy.introJoin}</MarkdownText>{' '}
+                      <span className="font-medium italic"><MarkdownText inline>{copy.introArt}</MarkdownText></span><MarkdownText inline>{copy.introEnd}</MarkdownText>
                     </h3>
                   </div>
 
                   {/* Details Grid */}
                   <div className="grid min-w-0 grid-cols-2 gap-6 border-y border-current/10 py-8 md:grid-cols-1 lg:grid-cols-2 lg:gap-8">
                     <div>
-                       <h4 className={`text-xs font-bold tracking-widest uppercase mb-4 ${theme === 'dark' ? 'text-white/50' : 'text-black/50'}`}>{copy.basedInLabel}</h4>
-                       <p className={`font-medium ${theme === 'dark' ? 'text-white' : 'text-black'}`}>{copy.basedIn}</p>
+                       <h4 className={`text-xs font-bold tracking-widest uppercase mb-4 ${theme === 'dark' ? 'text-white/50' : 'text-black/50'}`}><MarkdownText inline>{copy.basedInLabel}</MarkdownText></h4>
+                       <p className={`font-medium ${theme === 'dark' ? 'text-white' : 'text-black'}`}><MarkdownText inline>{copy.basedIn}</MarkdownText></p>
                     </div>
                     <div>
-                       <h4 className={`text-xs font-bold tracking-widest uppercase mb-4 ${theme === 'dark' ? 'text-white/50' : 'text-black/50'}`}>{copy.educationLabel}</h4>
-                       <p className={`break-words font-medium ${theme === 'dark' ? 'text-white' : 'text-black'}`}>{copy.education}</p>
+                       <h4 className={`text-xs font-bold tracking-widest uppercase mb-4 ${theme === 'dark' ? 'text-white/50' : 'text-black/50'}`}><MarkdownText inline>{copy.educationLabel}</MarkdownText></h4>
+                       <p className={`break-words font-medium ${theme === 'dark' ? 'text-white' : 'text-black'}`}><MarkdownText inline>{copy.education}</MarkdownText></p>
                     </div>
                     <div className="col-span-2 md:col-span-1 lg:col-span-2">
-                       <h4 className={`text-xs font-bold tracking-widest uppercase mb-4 ${theme === 'dark' ? 'text-white/50' : 'text-black/50'}`}>{copy.focusAreasLabel}</h4>
+                       <h4 className={`text-xs font-bold tracking-widest uppercase mb-4 ${theme === 'dark' ? 'text-white/50' : 'text-black/50'}`}><MarkdownText inline>{copy.focusAreasLabel}</MarkdownText></h4>
                       <div className="flex flex-wrap gap-2">
                          {copy.focusAreas.map(skill => (
                           <span key={skill} className={`px-3 py-1 text-xs rounded-full border ${theme === 'dark' ? 'border-white/20 text-white/80' : 'border-black/20 text-black/80'}`}>
-                            {skill}
+                            <MarkdownText inline>{skill}</MarkdownText>
                           </span>
                         ))}
                       </div>
@@ -275,7 +279,7 @@ const POPage = ({
 
                   {/* Bio */}
                   <div className={`space-y-6 text-base md:text-lg leading-relaxed ${theme === 'dark' ? 'text-gray-400' : 'text-gray-600'}`}>
-                    {copy.bio.map((paragraph) => <p key={paragraph}>{paragraph}</p>)}
+                    {copy.bio.map((paragraph, index) => <MarkdownText key={`${index}-${paragraph}`}>{paragraph}</MarkdownText>)}
                   </div>
                 </div>
               </FadeIn>
@@ -289,7 +293,7 @@ const POPage = ({
                     rel="noopener noreferrer"
                     className={`group flex items-center gap-3 px-8 py-4 rounded-full border transition-all ${theme === 'dark' ? 'border-white/20 hover:bg-white text-white hover:text-black' : 'border-black/20 hover:bg-black text-black hover:text-white'}`}
                   >
-                    <span className="text-sm font-bold tracking-widest uppercase">{copy.resume}</span>
+                    <span className="text-sm font-bold tracking-widest uppercase"><MarkdownText inline>{copy.resume}</MarkdownText></span>
                     <ArrowUpRight size={16} className="group-hover:translate-x-1 group-hover:-translate-y-1 transition-transform" />
                   </a>
 
@@ -310,7 +314,7 @@ const POPage = ({
             <div className="relative z-10 w-full pb-24">
               <FadeIn>
                 <h2 className={`font-mono text-4xl md:text-8xl font-black tracking-normal mb-12 md:mb-16 ${theme === 'light' ? 'text-light-coral' : ''}`}>
-                  {copy.whatIDo[0]}<br/>{copy.whatIDo[1]}
+                  <MarkdownText inline>{copy.whatIDo[0]}</MarkdownText><br/><MarkdownText inline>{copy.whatIDo[1]}</MarkdownText>
                 </h2>
               </FadeIn>
               
@@ -330,13 +334,13 @@ const POPage = ({
                   return (
                     <FadeIn key={capability.title} delay={(index + 1) * 0.2}>
                       <div className={`border p-8 md:p-12 rounded-[2rem] md:rounded-[3rem] transition-all group h-full ${theme === 'dark' ? 'bg-[#0a0a0a] border-white/5' : 'glass'} ${accentClasses[index]}`}>
-                        <h3 className={`font-mono text-2xl md:text-3xl font-bold mb-4 md:mb-6 transition-colors ${theme === 'dark' ? '' : 'text-light-ink'} ${titleClasses[index]}`}>{capability.title}</h3>
-                        <p className={`mb-6 md:mb-8 leading-relaxed text-sm md:text-base ${theme === 'dark' ? 'text-gray-400' : 'text-light-ink/70'}`}>
-                          {capability.description}
-                        </p>
+                        <h3 className={`font-mono text-2xl md:text-3xl font-bold mb-4 md:mb-6 transition-colors ${theme === 'dark' ? '' : 'text-light-ink'} ${titleClasses[index]}`}><MarkdownText inline>{capability.title}</MarkdownText></h3>
+                        <div className={`mb-6 md:mb-8 leading-relaxed text-sm md:text-base ${theme === 'dark' ? 'text-gray-400' : 'text-light-ink/70'}`}>
+                          <MarkdownText>{capability.description}</MarkdownText>
+                        </div>
                         <div className="flex flex-wrap gap-2 md:gap-3">
                           {capability.tags.map(tech => (
-                            <span key={tech} className={`px-2 py-1 text-xs rounded-md ${theme === 'dark' ? 'bg-neutral-800 text-neutral-400' : 'bg-neutral-200 text-neutral-600'}`}>{tech}</span>
+                            <span key={tech} className={`px-2 py-1 text-xs rounded-md ${theme === 'dark' ? 'bg-neutral-800 text-neutral-400' : 'bg-neutral-200 text-neutral-600'}`}><MarkdownText inline>{tech}</MarkdownText></span>
                           ))}
                         </div>
                       </div>
@@ -346,7 +350,7 @@ const POPage = ({
               </div>
 
               <FadeIn>
-                <h2 className={`font-mono text-4xl md:text-7xl font-black tracking-normal mb-12 md:mb-16 ${theme === 'light' ? 'text-light-coral' : ''}`}>{copy.worksTitle}</h2>
+                <h2 className={`font-mono text-4xl md:text-7xl font-black tracking-normal mb-12 md:mb-16 ${theme === 'light' ? 'text-light-coral' : ''}`}><MarkdownText inline>{copy.worksTitle}</MarkdownText></h2>
               </FadeIn>
               
               <div className="relative w-screen left-1/2 -translate-x-1/2 mt-12 md:mt-24">
@@ -357,7 +361,7 @@ const POPage = ({
                 <div 
                   ref={scrollContainerRef}
                   role="region"
-                  aria-label={copy.timelineLabel}
+                  aria-label={markdownToPlainText(copy.timelineLabel)}
                   tabIndex={0}
                   className="hide-scrollbar relative cursor-grab touch-pan-y overflow-x-auto overflow-y-hidden overscroll-x-contain outline-none active:cursor-grabbing focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-light-coral"
                   onScroll={updateTimelineScroll}
@@ -442,7 +446,7 @@ const POPage = ({
                               <motion.a
                                 href={`/projects/${encodeURIComponent(post.slug)}`}
                                 layoutId={`about-project-card-${post.slug}`}
-                                aria-label={`${copy.openProject} ${post.title}`}
+                                aria-label={`${markdownToPlainText(copy.openProject)} ${post.title}`}
                                 onClick={(event) => {
                                   event.preventDefault();
                                   if (suppressCardClick.current) {
@@ -504,7 +508,7 @@ const POPage = ({
                       <ChevronRight className={`h-4 w-4 shrink-0 ${theme === 'dark' ? 'text-white/45' : 'text-black/45'}`} />
                     </div>
                     <p className={`timeline-indicator-label mt-2 text-center font-mono text-[9px] font-bold uppercase tracking-[0.16em] sm:text-[10px] sm:tracking-[0.18em] ${theme === 'dark' ? 'text-white/45' : 'text-black/45'}`}>
-                      {copy.timelineHint}
+                      <MarkdownText inline>{copy.timelineHint}</MarkdownText>
                     </p>
                   </div>
                 </div>

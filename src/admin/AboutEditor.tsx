@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { ArrowLeft, Check, Eye, Loader2, Save } from 'lucide-react';
 import { adminAboutApi, CmsApiError } from '../lib/api';
+import MarkdownText from '../components/MarkdownText';
 import {
   DEFAULT_ABOUT_CONTENT,
   type AboutContent,
@@ -27,6 +28,7 @@ function Field({ label, value, onChange, placeholder }: {
   return <label className="block">
     <span className={labelClass}>{label}</span>
     <input className={inputClass} value={value} onChange={(event) => onChange(event.target.value)} placeholder={placeholder} />
+    <span className="mt-1.5 block text-[10px] leading-4 text-[#858585]">Supports Markdown: **bold**, *italic*, [link](https://…)</span>
   </label>;
 }
 
@@ -39,6 +41,7 @@ function TextArea({ label, value, onChange, rows = 4 }: {
   return <label className="block">
     <span className={labelClass}>{label}</span>
     <textarea className={`${inputClass} resize-y leading-6`} rows={rows} value={value} onChange={(event) => onChange(event.target.value)} />
+    <span className="mt-1.5 block text-[10px] leading-4 text-[#858585]">Supports Markdown, including headings, links, and lists.</span>
   </label>;
 }
 
@@ -160,7 +163,7 @@ export default function AboutEditor() {
         <div>
           <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[#737373]">Page content</p>
           <h1 className="mt-1 text-2xl font-semibold tracking-tight md:text-3xl">Edit About Me</h1>
-          <p className="mt-2 max-w-2xl text-sm leading-6 text-[#737373]">English and Chinese share one content record. Switch tabs to edit each version, then save them together.</p>
+          <p className="mt-2 max-w-2xl text-sm leading-6 text-[#737373]">English and Chinese share one content record. Every text field supports Markdown; switch tabs to edit each version, then save them together.</p>
         </div>
         <div className="inline-flex self-start rounded-full border border-[#d8d8d8] bg-white p-1" role="tablist" aria-label="Content language">
           {(['en', 'zh'] as PortfolioLanguage[]).map((item) => <button
@@ -242,14 +245,14 @@ export default function AboutEditor() {
             </div>
             <div className="p-6">
               <p className="text-xs uppercase tracking-[0.14em] text-white/50">PO-YU YANG</p>
-              <p className="mt-2 text-sm text-white/70">{copy.role}</p>
-              <h2 className="mt-8 text-3xl font-medium leading-tight">{previewIntro}</h2>
+              <p className="mt-2 text-sm text-white/70"><MarkdownText inline>{copy.role}</MarkdownText></p>
+              <h2 className="mt-8 text-3xl font-medium leading-tight"><MarkdownText inline>{previewIntro}</MarkdownText></h2>
               <div className="mt-8 grid grid-cols-2 gap-4 border-y border-white/20 py-5 text-sm">
-                <div><p className="text-[10px] font-semibold uppercase tracking-wider text-white/40">{copy.basedInLabel}</p><p className="mt-2 leading-5">{copy.basedIn}</p></div>
-                <div><p className="text-[10px] font-semibold uppercase tracking-wider text-white/40">{copy.educationLabel}</p><p className="mt-2 leading-5">{copy.education}</p></div>
+                <div><p className="text-[10px] font-semibold uppercase tracking-wider text-white/40"><MarkdownText inline>{copy.basedInLabel}</MarkdownText></p><p className="mt-2 leading-5"><MarkdownText inline>{copy.basedIn}</MarkdownText></p></div>
+                <div><p className="text-[10px] font-semibold uppercase tracking-wider text-white/40"><MarkdownText inline>{copy.educationLabel}</MarkdownText></p><p className="mt-2 leading-5"><MarkdownText inline>{copy.education}</MarkdownText></p></div>
               </div>
-              <div className="mt-6 space-y-4 text-sm leading-6 text-white/65">{copy.bio.map((paragraph, index) => <p key={index}>{paragraph}</p>)}</div>
-              <div className="mt-8 flex flex-wrap gap-2">{copy.focusAreas.map((area) => <span key={area} className="rounded-full border border-white/20 px-3 py-1 text-xs">{area}</span>)}</div>
+              <div className="mt-6 space-y-4 text-sm leading-6 text-white/65">{copy.bio.map((paragraph, index) => <MarkdownText key={index}>{paragraph}</MarkdownText>)}</div>
+              <div className="mt-8 flex flex-wrap gap-2">{copy.focusAreas.map((area) => <span key={area} className="rounded-full border border-white/20 px-3 py-1 text-xs"><MarkdownText inline>{area}</MarkdownText></span>)}</div>
             </div>
           </div>
         </aside>
