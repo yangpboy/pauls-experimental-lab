@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { ArrowLeft, Check, Eye, Loader2, Save } from 'lucide-react';
 import { adminAboutApi, CmsApiError } from '../lib/api';
 import MarkdownText from '../components/MarkdownText';
@@ -72,10 +72,6 @@ export default function AboutEditor() {
   const [notice, setNotice] = useState<string | null>(null);
 
   const copy = draft[language];
-  const previewIntro = useMemo(
-    () => `${copy.introLead} ${copy.introEngineering} ${copy.introJoin} ${copy.introArt}${copy.introEnd}`.replace(/\s+/g, ' ').trim(),
-    [copy],
-  );
 
   useEffect(() => {
     let cancelled = false;
@@ -184,13 +180,10 @@ export default function AboutEditor() {
         <div className="space-y-6">
           <section className="rounded-xl border border-[#dedede] bg-white p-5 shadow-sm md:p-6">
             <h2 className="text-base font-semibold">Introduction</h2>
-            <p className="mt-1 text-xs leading-5 text-[#737373]">Controls the name card, headline, location, education, and focus tags.</p>
+            <p className="mt-1 text-xs leading-5 text-[#737373]">Controls the name card, headline, location, education, and focus tags. Use Markdown directly in the headline.</p>
             <div className="mt-5 grid gap-4 md:grid-cols-2">
               <div className="md:col-span-2"><Field label="Role" value={copy.role} onChange={(value) => updateLocale('role', value)} /></div>
-              <Field label="Headline — opening" value={copy.introLead} onChange={(value) => updateLocale('introLead', value)} />
-              <Field label="Headline — engineering phrase" value={copy.introEngineering} onChange={(value) => updateLocale('introEngineering', value)} />
-              <Field label="Headline — connector" value={copy.introJoin} onChange={(value) => updateLocale('introJoin', value)} />
-              <Field label="Headline — art phrase" value={copy.introArt} onChange={(value) => updateLocale('introArt', value)} />
+              <div className="md:col-span-2"><TextArea label="Headline" value={copy.headline} onChange={(value) => updateLocale('headline', value)} rows={7} /></div>
               <Field label="Location label" value={copy.basedInLabel} onChange={(value) => updateLocale('basedInLabel', value)} />
               <Field label="Location" value={copy.basedIn} onChange={(value) => updateLocale('basedIn', value)} />
               <Field label="Education label" value={copy.educationLabel} onChange={(value) => updateLocale('educationLabel', value)} />
@@ -246,7 +239,7 @@ export default function AboutEditor() {
             <div className="p-6">
               <p className="text-xs uppercase tracking-[0.14em] text-white/50">PO-YU YANG</p>
               <p className="mt-2 text-sm text-white/70"><MarkdownText inline>{copy.role}</MarkdownText></p>
-              <h2 className="mt-8 text-3xl font-medium leading-tight"><MarkdownText inline>{previewIntro}</MarkdownText></h2>
+              <h2 className="mt-8 text-3xl font-medium leading-tight"><MarkdownText inline>{copy.headline}</MarkdownText></h2>
               <div className="mt-8 grid grid-cols-2 gap-4 border-y border-white/20 py-5 text-sm">
                 <div><p className="text-[10px] font-semibold uppercase tracking-wider text-white/40"><MarkdownText inline>{copy.basedInLabel}</MarkdownText></p><p className="mt-2 leading-5"><MarkdownText inline>{copy.basedIn}</MarkdownText></p></div>
                 <div><p className="text-[10px] font-semibold uppercase tracking-wider text-white/40"><MarkdownText inline>{copy.educationLabel}</MarkdownText></p><p className="mt-2 leading-5"><MarkdownText inline>{copy.education}</MarkdownText></p></div>

@@ -249,10 +249,7 @@ const POPage = ({
                   {/* Intro */}
                   <div>
                     <h3 className={`text-2xl md:text-3xl font-light leading-tight mb-6 ${theme === 'dark' ? 'text-white' : 'text-black'}`}>
-                      <MarkdownText inline>{copy.introLead}</MarkdownText>{' '}
-                      <span className="font-medium italic"><MarkdownText inline>{copy.introEngineering}</MarkdownText></span>{' '}
-                      <MarkdownText inline>{copy.introJoin}</MarkdownText>{' '}
-                      <span className="font-medium italic"><MarkdownText inline>{copy.introArt}</MarkdownText></span><MarkdownText inline>{copy.introEnd}</MarkdownText>
+                      <MarkdownText inline>{copy.headline}</MarkdownText>
                     </h3>
                   </div>
 

@@ -8,11 +8,7 @@ export interface AboutCapability {
 
 export interface AboutLocaleContent {
   role: string;
-  introLead: string;
-  introEngineering: string;
-  introJoin: string;
-  introArt: string;
-  introEnd: string;
+  headline: string;
   basedInLabel: string;
   basedIn: string;
   educationLabel: string;
@@ -34,11 +30,7 @@ export type AboutContent = Record<PortfolioLanguage, AboutLocaleContent>;
 export const DEFAULT_ABOUT_CONTENT: AboutContent = {
   en: {
     role: 'Industrial Designer & Researcher',
-    introLead: 'Bridging the gap between',
-    introEngineering: 'engineering precision',
-    introJoin: 'and',
-    introArt: 'artistic expression',
-    introEnd: '.',
+    headline: 'Bridging the gap between *engineering precision* and *artistic expression*.',
     basedInLabel: 'Based In',
     basedIn: 'Taiwan & UK',
     educationLabel: 'Education',
@@ -75,11 +67,7 @@ export const DEFAULT_ABOUT_CONTENT: AboutContent = {
   },
   zh: {
     role: '工業設計師暨研究者',
-    introLead: '在',
-    introEngineering: '工程的精準',
-    introJoin: '與',
-    introArt: '藝術的表達',
-    introEnd: '。',
+    headline: '在 *工程的精準* 與 *藝術的表達* 之間搭起橋樑。',
     basedInLabel: '所在地',
     basedIn: '台灣與英國',
     educationLabel: '學歷',
