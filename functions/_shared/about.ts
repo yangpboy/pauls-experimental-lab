@@ -49,13 +49,16 @@ const readLocale = (value: unknown, fallback: AboutLocaleContent): AboutLocaleCo
   const source = isRecord(value) ? value : {};
   const capabilities = Array.isArray(source.capabilities) ? source.capabilities : [];
   const whatIDo = readStringArray(source, 'whatIDo', fallback.whatIDo, 2, 80);
+  const legacyEngineering = readString(source, 'introEngineering', '', 160);
+  const legacyArt = readString(source, 'introArt', '', 160);
   const legacyHeadline = [
     readString(source, 'introLead', '', 240),
-    readString(source, 'introEngineering', '', 160),
+    legacyEngineering && `*${legacyEngineering}*`,
     readString(source, 'introJoin', '', 80),
-    readString(source, 'introArt', '', 160),
+    legacyArt && `*${legacyArt}*`,
   ].filter(Boolean).join(' ');
-  const legacyHeadlineWithEnding = `${legacyHeadline}${readString(source, 'introEnd', '', 8)}`.trim();
+  const legacyEnding = readString(source, 'introEnd', '', 8);
+  const legacyHeadlineWithEnding = `${legacyHeadline}${legacyEnding && !/[.!?。！？…]$/.test(legacyHeadline) ? legacyEnding : ''}`.trim();
 
   return {
     role: readString(source, 'role', fallback.role, 160),
