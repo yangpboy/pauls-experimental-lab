@@ -57,12 +57,10 @@ const readLocale = (value: unknown, fallback: AboutLocaleContent): AboutLocaleCo
     readString(source, 'introJoin', '', 80),
     legacyArt && `*${legacyArt}*`,
   ].filter(Boolean).join(' ');
-  const legacyEnding = readString(source, 'introEnd', '', 8);
-  const legacyHeadlineWithEnding = `${legacyHeadline}${legacyEnding && !/[.!?。！？…]$/.test(legacyHeadline) ? legacyEnding : ''}`.trim();
 
   return {
     role: readString(source, 'role', fallback.role, 160),
-    headline: readString(source, 'headline', legacyHeadlineWithEnding || fallback.headline, 1_000),
+    headline: readString(source, 'headline', legacyHeadline || fallback.headline, 1_000),
     basedInLabel: readString(source, 'basedInLabel', fallback.basedInLabel, 80),
     basedIn: readString(source, 'basedIn', fallback.basedIn, 240),
     educationLabel: readString(source, 'educationLabel', fallback.educationLabel, 80),
