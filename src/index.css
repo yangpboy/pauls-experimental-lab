@@ -187,8 +187,21 @@ body {
 
 .about-markdown-inline a,
 .about-markdown-block a {
-  text-decoration: underline;
-  text-underline-offset: 0.18em;
+  color: inherit;
+  text-decoration: none;
+  transition: color 160ms ease;
+}
+
+.about-markdown-inline a:hover,
+.about-markdown-block a:hover {
+  color: var(--color-light-coral);
+}
+
+.about-markdown-inline a:focus-visible,
+.about-markdown-block a:focus-visible {
+  border-radius: 0.15em;
+  outline: 2px solid var(--color-light-coral);
+  outline-offset: 0.15em;
 }
 
 .about-markdown-inline code,
