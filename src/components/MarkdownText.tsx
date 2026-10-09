@@ -1,5 +1,6 @@
 import type { ComponentPropsWithoutRef, ReactNode } from 'react';
 import ReactMarkdown, { type Components } from 'react-markdown';
+import remarkBreaks from 'remark-breaks';
 import remarkGfm from 'remark-gfm';
 
 const externalLinkProps = (href?: string) => href?.startsWith('http')
@@ -40,15 +41,6 @@ const blockComponents: Components = {
   table: ({ children }) => <div className="my-4 overflow-x-auto"><table>{children}</table></div>,
 };
 
-export const markdownToPlainText = (value: string) => value
-  .replace(/!\[([^\]]*)\]\([^)]*\)/g, '$1')
-  .replace(/\[([^\]]+)\]\([^)]*\)/g, '$1')
-  .replace(/[`*_~>#|]/g, '')
-  .replace(/^\s*[-+]\s+/gm, '')
-  .replace(/^\s*\d+\.\s+/gm, '')
-  .replace(/\s+/g, ' ')
-  .trim();
-
 export default function MarkdownText({ children, inline = false, className = '' }: {
   children: string;
   inline?: boolean;
@@ -57,7 +49,7 @@ export default function MarkdownText({ children, inline = false, className = '' 
   if (!children) return null;
 
   const content = <ReactMarkdown
-    remarkPlugins={[remarkGfm]}
+    remarkPlugins={[remarkGfm, remarkBreaks]}
     skipHtml
     components={inline ? inlineComponents : blockComponents}
   >

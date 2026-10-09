@@ -27,8 +27,8 @@ function Field({ label, value, onChange, placeholder }: {
 }) {
   return <label className="block">
     <span className={labelClass}>{label}</span>
-    <input className={inputClass} value={value} onChange={(event) => onChange(event.target.value)} placeholder={placeholder} />
-    <span className="mt-1.5 block text-[10px] leading-4 text-[#858585]">Supports Markdown: **bold**, *italic*, [link](https://…)</span>
+    <textarea className={`${inputClass} min-h-[68px] resize-y leading-5`} rows={2} value={value} onChange={(event) => onChange(event.target.value)} placeholder={placeholder} />
+    <span className="mt-1.5 block text-[10px] leading-4 text-[#858585]">Markdown: **bold**, *italic*, [link](https://…). Press Enter once for a line break.</span>
   </label>;
 }
 
@@ -41,7 +41,7 @@ function TextArea({ label, value, onChange, rows = 4 }: {
   return <label className="block">
     <span className={labelClass}>{label}</span>
     <textarea className={`${inputClass} resize-y leading-6`} rows={rows} value={value} onChange={(event) => onChange(event.target.value)} />
-    <span className="mt-1.5 block text-[10px] leading-4 text-[#858585]">Supports Markdown, including headings, links, and lists.</span>
+    <span className="mt-1.5 block text-[10px] leading-4 text-[#858585]">Markdown supports headings, links, and lists. Press Enter once for a line break; leave one blank line for a new paragraph.</span>
   </label>;
 }
 

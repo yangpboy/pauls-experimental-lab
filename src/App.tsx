@@ -12,12 +12,13 @@ import GeologicAssembliesExperience from './components/GeologicAssembliesExperie
 import GarageDeck from './components/GarageDeck';
 import Explo11Film from './components/Explo11Film';
 import Explo11Index from './components/Explo11Index';
-import MarkdownText, { markdownToPlainText } from './components/MarkdownText';
+import MarkdownText from './components/MarkdownText';
 import AdminApp from './admin/AdminApp';
 import AdminLogin from './admin/AdminLogin';
 import AboutEditor from './admin/AboutEditor';
 import { aboutApi, CmsApiError, projectsApi } from './lib/api';
 import { getGarageProjectPresentation } from './lib/garagePresentation';
+import { markdownToPlainText } from './lib/markdown';
 import { getProjectCreativeFields } from './lib/projectCreativeFields';
 import { applyHomeSeo, applyProjectSeo, getProjectSeoDescription } from './lib/seo';
 import type { Project, ProjectSummary } from './types/cms';
