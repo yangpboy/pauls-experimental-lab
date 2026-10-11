@@ -4,7 +4,7 @@
  */
 
 import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
-import { lazy, Suspense, useRef, useEffect, useState, useMemo } from 'react';
+import { lazy, Suspense, useCallback, useRef, useEffect, useState, useMemo } from 'react';
 import { X, Share2, ArrowUpRight, Heart, ChevronLeft, ChevronRight, BookOpen, ArrowDown, Menu, Settings, LockKeyhole, LayoutGrid, Layers3, ListFilter } from 'lucide-react';
 import ProjectRenderer from './components/ProjectRenderer';
 import TiniWebCaseStudy from './components/TiniWebCaseStudy';
@@ -160,6 +160,7 @@ const POPage = ({
   const suppressCardClick = useRef(false);
   const startX = useRef(0);
   const scrollLeft = useRef(0);
+  const timelineScrollFrame = useRef<number | null>(null);
   const [timelineScroll, setTimelineScroll] = useState({ progress: 0, visibleRatio: 1 });
   const copy = content[language];
 
@@ -172,7 +173,7 @@ const POPage = ({
     [projects]
   );
 
-  const updateTimelineScroll = () => {
+  const commitTimelineScroll = useCallback(() => {
     const container = scrollContainerRef.current;
     if (!container) return;
 
@@ -183,13 +184,21 @@ const POPage = ({
         ? Math.min(1, container.clientWidth / container.scrollWidth)
         : 1,
     });
-  };
+  }, []);
+
+  const updateTimelineScroll = useCallback(() => {
+    if (timelineScrollFrame.current !== null) return;
+    timelineScrollFrame.current = window.requestAnimationFrame(() => {
+      timelineScrollFrame.current = null;
+      commitTimelineScroll();
+    });
+  }, [commitTimelineScroll]);
 
   useEffect(() => {
     const container = scrollContainerRef.current;
     if (!container) return;
 
-    const frame = window.requestAnimationFrame(updateTimelineScroll);
+    const frame = window.requestAnimationFrame(commitTimelineScroll);
     const resizeObserver = new ResizeObserver(updateTimelineScroll);
     resizeObserver.observe(container);
     const content = container.firstElementChild;
@@ -197,9 +206,10 @@ const POPage = ({
 
     return () => {
       window.cancelAnimationFrame(frame);
+      if (timelineScrollFrame.current !== null) window.cancelAnimationFrame(timelineScrollFrame.current);
       resizeObserver.disconnect();
     };
-  }, [timelinePosts.length]);
+  }, [commitTimelineScroll, timelinePosts.length, updateTimelineScroll]);
 
   const finishTimelineDrag = (event: React.PointerEvent<HTMLDivElement>) => {
     const container = scrollContainerRef.current;
@@ -361,7 +371,8 @@ const POPage = ({
                   role="region"
                   aria-label={markdownToPlainText(copy.timelineLabel)}
                   tabIndex={0}
-                  className="hide-scrollbar relative cursor-grab touch-pan-y overflow-x-auto overflow-y-hidden overscroll-x-contain outline-none active:cursor-grabbing focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-light-coral"
+                  className="hide-scrollbar relative cursor-grab touch-auto overflow-x-auto overflow-y-hidden overscroll-x-contain outline-none active:cursor-grabbing focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-light-coral"
+                  style={{ WebkitOverflowScrolling: 'touch' }}
                   onScroll={updateTimelineScroll}
                   onKeyDown={(event) => {
                     if (!scrollContainerRef.current) return;
@@ -374,7 +385,7 @@ const POPage = ({
                     }
                   }}
                   onPointerDown={(event) => {
-                    if (event.pointerType === 'mouse' && event.button !== 0) return;
+                    if (event.pointerType !== 'mouse' || event.button !== 0) return;
                     isDragging.current = true;
                     draggedDistance.current = 0;
                     suppressCardClick.current = false;
@@ -387,7 +398,7 @@ const POPage = ({
                   onPointerUp={finishTimelineDrag}
                   onPointerCancel={finishTimelineDrag}
                   onPointerMove={(event) => {
-                    if (!isDragging.current || !scrollContainerRef.current) return;
+                    if (event.pointerType !== 'mouse' || !isDragging.current || !scrollContainerRef.current) return;
                     const delta = event.clientX - startX.current;
                     draggedDistance.current = Math.max(draggedDistance.current, Math.abs(delta));
                     if (draggedDistance.current > 6) suppressCardClick.current = true;

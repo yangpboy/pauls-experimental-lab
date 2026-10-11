@@ -1,6 +1,7 @@
 import { ChevronLeft, ChevronRight, ZoomIn } from 'lucide-react';
 import { Fragment, type ReactNode, useCallback, useEffect, useMemo, useState } from 'react';
 import LazyImage from './LazyImage';
+import MarkdownText from './MarkdownText';
 import type { GalleryImage, ProcessStep, Project, ProjectBlock, ProjectBlockContent } from '../types/cms';
 
 type PreviewImage = {
@@ -71,11 +72,7 @@ const getVideoEmbed = (value: string) => {
 };
 
 const BodyCopy = ({ value }: { value: string }) => (
-  <div className="space-y-5 text-base font-light leading-8 text-neutral-700 dark:text-neutral-300 md:text-xl md:leading-9">
-    {value.split(/\n{2,}/).filter(Boolean).map((paragraph, index) => (
-      <p key={`${paragraph.slice(0, 24)}-${index}`} className="whitespace-pre-line">{paragraph}</p>
-    ))}
-  </div>
+  <MarkdownText className="text-base font-light leading-8 text-neutral-700 dark:text-neutral-300 md:text-xl md:leading-9">{value}</MarkdownText>
 );
 
 const ZoomableImage = ({
@@ -126,9 +123,9 @@ const Block = ({
         {imageUrl && <LazyImage src={imageUrl} alt={text(content.alt) || project.title} className="absolute inset-0 h-full w-full object-cover" priority={priority} />}
         <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/15 to-transparent" />
         <div className="relative mx-auto flex min-h-[62vh] max-w-7xl flex-col justify-end px-6 py-12 md:px-16 md:py-20">
-          {text(content.eyebrow) && <p className="mb-4 font-mono text-xs font-bold uppercase tracking-[0.25em] text-white/70">{text(content.eyebrow)}</p>}
-          <h1 className="max-w-5xl text-4xl font-semibold leading-[0.95] md:text-7xl">{text(content.heading) || project.title}</h1>
-          {text(content.subheading) && <p className="mt-6 max-w-2xl text-lg text-white/75 md:text-2xl">{text(content.subheading)}</p>}
+          {text(content.eyebrow) && <p className="mb-4 font-mono text-xs font-bold uppercase tracking-[0.25em] text-white/70"><MarkdownText inline>{text(content.eyebrow)}</MarkdownText></p>}
+          <h1 className="max-w-5xl text-4xl font-semibold leading-[0.95] md:text-7xl"><MarkdownText inline>{text(content.heading) || project.title}</MarkdownText></h1>
+          {text(content.subheading) && <p className="mt-6 max-w-2xl text-lg text-white/75 md:text-2xl"><MarkdownText inline>{text(content.subheading)}</MarkdownText></p>}
         </div>
       </section>
     );
@@ -138,7 +135,7 @@ const Block = ({
     return (
       <section className="bg-white px-6 py-16 dark:bg-[#050505] md:px-12 md:py-24">
         <div className="mx-auto max-w-4xl">
-          {text(content.heading) && <h2 className="mb-8 text-3xl font-semibold text-neutral-900 dark:text-white md:text-5xl">{text(content.heading)}</h2>}
+          {text(content.heading) && <h2 className="mb-8 text-3xl font-semibold text-neutral-900 dark:text-white md:text-5xl"><MarkdownText inline>{text(content.heading)}</MarkdownText></h2>}
           {text(content.body) ? <BodyCopy value={text(content.body)} /> : <p className="text-neutral-400">No text has been added to this block.</p>}
         </div>
       </section>
@@ -157,7 +154,7 @@ const Block = ({
           priority={priority}
           onOpen={onImageOpen}
         />
-        {text(content.caption) && <figcaption className="mx-auto max-w-6xl px-6 py-4 text-sm text-neutral-500 dark:text-neutral-400">{text(content.caption)}</figcaption>}
+        {text(content.caption) && <figcaption className="mx-auto max-w-6xl px-6 py-4 text-sm text-neutral-500 dark:text-neutral-400"><MarkdownText inline>{text(content.caption)}</MarkdownText></figcaption>}
       </figure>
     );
   }
@@ -183,7 +180,7 @@ const Block = ({
               priority={priority && index < 2}
               onOpen={onImageOpen}
             />
-            {image.caption && <figcaption className="px-4 py-3 text-xs text-neutral-500 dark:text-neutral-400">{image.caption}</figcaption>}
+            {image.caption && <figcaption className="px-4 py-3 text-xs text-neutral-500 dark:text-neutral-400"><MarkdownText inline>{image.caption}</MarkdownText></figcaption>}
           </figure>
         ))}
       </section>
@@ -201,7 +198,7 @@ const Block = ({
         ) : (
           <video className="h-auto w-full" src={url} poster={text(content.posterUrl) || undefined} controls playsInline />
         )}
-        {text(content.caption) && <figcaption className="bg-white px-6 py-4 text-sm text-neutral-500 dark:bg-[#050505] dark:text-neutral-400">{text(content.caption)}</figcaption>}
+        {text(content.caption) && <figcaption className="bg-white px-6 py-4 text-sm text-neutral-500 dark:bg-[#050505] dark:text-neutral-400"><MarkdownText inline>{text(content.caption)}</MarkdownText></figcaption>}
       </figure>
     );
   }
@@ -209,8 +206,8 @@ const Block = ({
   if (block.type === 'quote') {
     return (
       <figure className="bg-light-coral px-6 py-20 text-white md:px-12 md:py-28">
-        <blockquote className="mx-auto max-w-5xl text-3xl font-medium leading-tight md:text-6xl">“{text(content.quote)}”</blockquote>
-        {text(content.attribution) && <figcaption className="mx-auto mt-8 max-w-5xl font-mono text-xs font-bold uppercase tracking-[0.22em] text-white/75">— {text(content.attribution)}</figcaption>}
+        <blockquote className="mx-auto max-w-5xl text-3xl font-medium leading-tight md:text-6xl">“<MarkdownText inline>{text(content.quote)}</MarkdownText>”</blockquote>
+        {text(content.attribution) && <figcaption className="mx-auto mt-8 max-w-5xl font-mono text-xs font-bold uppercase tracking-[0.22em] text-white/75">— <MarkdownText inline>{text(content.attribution)}</MarkdownText></figcaption>}
       </figure>
     );
   }
@@ -228,7 +225,7 @@ const Block = ({
             onOpen={onImageOpen}
           />
         )}
-        {text(column.heading) && <h3 className="text-2xl font-semibold md:text-4xl">{text(column.heading)}</h3>}
+        {text(column.heading) && <h3 className="text-2xl font-semibold md:text-4xl"><MarkdownText inline>{text(column.heading)}</MarkdownText></h3>}
         {text(column.body) && <BodyCopy value={text(column.body)} />}
       </article>
     );
@@ -246,7 +243,7 @@ const Block = ({
   return (
     <section className="bg-neutral-100 px-6 py-16 text-neutral-900 dark:bg-neutral-950 dark:text-white md:px-12 md:py-24">
       <div className="mx-auto max-w-6xl">
-        {text(content.heading) && <h2 className="mb-12 text-3xl font-semibold md:text-5xl">{text(content.heading)}</h2>}
+        {text(content.heading) && <h2 className="mb-12 text-3xl font-semibold md:text-5xl"><MarkdownText inline>{text(content.heading)}</MarkdownText></h2>}
         <div className="grid gap-px bg-neutral-300 dark:bg-neutral-700 md:grid-cols-2">
           {steps.map((step, index) => (
             <article key={`${step.title}-${index}`} className="bg-neutral-100 p-6 dark:bg-neutral-950 md:p-10">
@@ -261,8 +258,8 @@ const Block = ({
                   />
                 </div>
               )}
-              <h3 className="mt-6 text-2xl font-semibold">{step.title}</h3>
-              {step.description && <p className="mt-4 leading-7 text-neutral-600 dark:text-neutral-400">{step.description}</p>}
+              <h3 className="mt-6 text-2xl font-semibold"><MarkdownText inline>{step.title}</MarkdownText></h3>
+              {step.description && <MarkdownText className="mt-4 leading-7 text-neutral-600 dark:text-neutral-400">{step.description}</MarkdownText>}
             </article>
           ))}
         </div>

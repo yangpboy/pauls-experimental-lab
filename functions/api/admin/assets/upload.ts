@@ -45,16 +45,23 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env }) => {
     if (!(file instanceof File)) {
       throw new ApiError(400, 'FILE_REQUIRED', 'Choose a file to upload.');
     }
-    if (!file.type.startsWith('image/')) {
-      throw new ApiError(400, 'IMAGE_REQUIRED', 'Only image uploads are supported in this CMS version.');
+    const isImage = file.type.startsWith('image/');
+    const isVideo = file.type.startsWith('video/');
+    if (!isImage && !isVideo) {
+      throw new ApiError(400, 'MEDIA_REQUIRED', 'Choose an image or video file.');
     }
-    if (file.size > 20 * 1024 * 1024) {
-      throw new ApiError(413, 'FILE_TOO_LARGE', 'Images must be 20 MB or smaller.');
+    const maxSize = isVideo ? 95 * 1024 * 1024 : 20 * 1024 * 1024;
+    if (file.size > maxSize) {
+      throw new ApiError(413, 'FILE_TOO_LARGE', `${isVideo ? 'Videos must be 95 MB' : 'Images must be 20 MB'} or smaller.`);
     }
 
     const projectIdValue = form.get('projectId');
     const projectId = typeof projectIdValue === 'string' && projectIdValue ? projectIdValue : null;
     const provider = env.ASSET_PROVIDER ?? 'r2';
+
+    if (isVideo && provider !== 'r2') {
+      throw new ApiError(501, 'VIDEO_STORAGE_NOT_CONFIGURED', 'Video uploads require the R2 media provider.');
+    }
 
     if (provider === 'r2') {
       if (!env.MEDIA_BUCKET || !env.R2_PUBLIC_BASE_URL) {

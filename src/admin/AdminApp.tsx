@@ -29,6 +29,7 @@ import {
   type LucideIcon,
 } from 'lucide-react';
 import { adminProjectsApi, CmsApiError } from '../lib/api';
+import MarkdownText from '../components/MarkdownText';
 import {
   BLOCK_TYPES,
   createEmptyBlock,
@@ -103,17 +104,19 @@ const valueObject = (value: unknown) => value && typeof value === 'object' && !A
   ? value as Record<string, unknown>
   : {};
 
-function Field({ label, value, onChange, placeholder, type = 'text' }: {
+function Field({ label, value, onChange, placeholder, type = 'text', hint }: {
   label: string;
   value: string;
   onChange: (value: string) => void;
   placeholder?: string;
   type?: string;
+  hint?: string;
 }) {
   return (
     <label className="block">
       <span className={labelClass}>{label}</span>
       <input className={inputClass} type={type} value={value} onChange={(event) => onChange(event.target.value)} placeholder={placeholder} />
+      {hint && <span className="mt-1.5 block text-[10px] leading-4 text-[#858585]">{hint}</span>}
     </label>
   );
 }
@@ -175,31 +178,35 @@ function TagField({ label, values, suggestions, onChange }: {
   );
 }
 
-function TextArea({ label, value, onChange, placeholder, rows = 5 }: {
+function TextArea({ label, value, onChange, placeholder, rows = 5, markdown = false }: {
   label: string;
   value: string;
   onChange: (value: string) => void;
   placeholder?: string;
   rows?: number;
+  markdown?: boolean;
 }) {
   return (
     <label className="block">
       <span className={labelClass}>{label}</span>
       <textarea className={`${inputClass} resize-y leading-6`} rows={rows} value={value} onChange={(event) => onChange(event.target.value)} placeholder={placeholder} />
+      {markdown && <span className="mt-1.5 block text-[10px] leading-4 text-[#858585]">Markdown: **bold**, *italic*, [link text](https://example.com), lists, and headings.</span>}
     </label>
   );
 }
 
-function MediaField({ label, value, onChange, onUpload, uploading, preview = 'compact' }: {
+function MediaField({ label, value, onChange, onUpload, uploading, preview = 'compact', mediaType = 'image' }: {
   label: string;
   value: string;
   onChange: (value: string) => void;
   onUpload: (file: File) => void | Promise<void>;
   uploading: boolean;
   preview?: 'wide' | 'compact' | false;
+  mediaType?: 'image' | 'video';
 }) {
   const [localPreview, setLocalPreview] = useState<string | null>(null);
   const displayUrl = localPreview || value;
+  const isVideo = mediaType === 'video';
 
   const selectFile = (file: File) => {
     if (localPreview) URL.revokeObjectURL(localPreview);
@@ -209,7 +216,7 @@ function MediaField({ label, value, onChange, onUpload, uploading, preview = 'co
     void onUpload(file);
   };
 
-  const removeImage = () => {
+  const removeMedia = () => {
     if (localPreview) URL.revokeObjectURL(localPreview);
     setLocalPreview(null);
     onChange('');
@@ -219,23 +226,25 @@ function MediaField({ label, value, onChange, onUpload, uploading, preview = 'co
     <div className="space-y-3">
       <span className={labelClass}>{label}</span>
       {preview && displayUrl ? <div className={`relative overflow-hidden rounded-md border border-[#e2e2e2] bg-[linear-gradient(45deg,#f1f1f1_25%,transparent_25%),linear-gradient(-45deg,#f1f1f1_25%,transparent_25%),linear-gradient(45deg,transparent_75%,#f1f1f1_75%),linear-gradient(-45deg,transparent_75%,#f1f1f1_75%)] bg-[length:20px_20px] bg-[position:0_0,0_10px,10px_-10px,-10px_0px] ${preview === 'wide' ? 'min-h-52' : 'aspect-[4/3]'}`}>
-        <img src={displayUrl} alt="Selected upload preview" className={`${preview === 'wide' ? 'max-h-[560px] min-h-52' : 'h-full'} w-full object-contain`} />
+        {isVideo
+          ? <video src={displayUrl} className={`${preview === 'wide' ? 'max-h-[560px] min-h-52' : 'h-full'} w-full bg-black object-contain`} controls muted playsInline />
+          : <img src={displayUrl} alt="Selected upload preview" className={`${preview === 'wide' ? 'max-h-[560px] min-h-52' : 'h-full'} w-full object-contain`} />}
         {localPreview && <span className="absolute left-3 top-3 rounded-full bg-black/75 px-2.5 py-1 text-[10px] font-semibold text-white">Local preview</span>}
         {uploading && <span className="absolute inset-0 grid place-items-center bg-black/25 text-white"><span className="inline-flex items-center gap-2 rounded-full bg-black/70 px-4 py-2 text-xs font-semibold"><Loader2 className="animate-spin" size={15} /> Uploading to R2…</span></span>}
       </div> : preview ? <label className={`${preview === 'wide' ? 'min-h-52' : 'min-h-32'} flex cursor-pointer flex-col items-center justify-center rounded-md border-2 border-dashed border-[#cfcfcf] bg-[#fafafa] px-5 text-center transition hover:border-[#1769ff] hover:bg-[#f4f8ff]`}>
-        <ImagePlus className="mb-3 text-[#1769ff]" size={26} />
-        <span className="text-sm font-semibold">Choose an image</span>
-        <span className="mt-1 text-xs text-[#737373]">Preview it here before the project is saved.</span>
-        <input className="sr-only" type="file" accept="image/*" disabled={uploading} onChange={(event) => { const file = event.target.files?.[0]; if (file) selectFile(file); event.target.value = ''; }} />
+        {isVideo ? <Video className="mb-3 text-[#1769ff]" size={26} /> : <ImagePlus className="mb-3 text-[#1769ff]" size={26} />}
+        <span className="text-sm font-semibold">Choose {isVideo ? 'a video' : 'an image'}</span>
+        <span className="mt-1 text-xs text-[#737373]">{isVideo ? 'MP4, WebM, or MOV up to 95 MB.' : 'Preview it here before the project is saved.'}</span>
+        <input className="sr-only" type="file" accept={isVideo ? 'video/mp4,video/webm,video/quicktime' : 'image/*'} disabled={uploading} onChange={(event) => { const file = event.target.files?.[0]; if (file) selectFile(file); event.target.value = ''; }} />
       </label> : null}
       <div className="flex flex-wrap items-center gap-3">
         <label className="inline-flex cursor-pointer items-center gap-2 rounded-md border border-[#d8d8d8] bg-white px-3 py-2 text-xs font-semibold transition hover:border-[#1769ff] hover:text-[#1769ff]">
           {uploading ? <Loader2 className="animate-spin" size={14} /> : <Upload size={14} />}
-          {uploading ? 'Uploading…' : displayUrl ? 'Replace image' : 'Upload to R2'}
+          {uploading ? 'Uploading…' : displayUrl ? `Replace ${mediaType}` : `Upload ${mediaType} to R2`}
           <input
             className="sr-only"
             type="file"
-            accept="image/*"
+            accept={isVideo ? 'video/mp4,video/webm,video/quicktime' : 'image/*'}
             disabled={uploading}
             onChange={(event) => {
               const file = event.target.files?.[0];
@@ -244,11 +253,11 @@ function MediaField({ label, value, onChange, onUpload, uploading, preview = 'co
             }}
           />
         </label>
-        {displayUrl && <button type="button" className="text-xs font-medium text-[#737373] hover:text-red-600" onClick={removeImage}>Remove</button>}
+        {displayUrl && <button type="button" className="text-xs font-medium text-[#737373] hover:text-red-600" onClick={removeMedia}>Remove</button>}
       </div>
       <details className="text-xs text-[#737373]">
-        <summary className="cursor-pointer font-medium hover:text-[#1769ff]">Use an image URL instead</summary>
-        <div className="mt-2"><Field label="Image URL" value={value} onChange={(nextValue) => { setLocalPreview(null); onChange(nextValue); }} placeholder="https://media.paul-lab.com/…" /></div>
+        <summary className="cursor-pointer font-medium hover:text-[#1769ff]">Use {isVideo ? 'a video' : 'an image'} URL instead</summary>
+        <div className="mt-2"><Field label={`${isVideo ? 'Video' : 'Image'} URL`} value={value} onChange={(nextValue) => { setLocalPreview(null); onChange(nextValue); }} placeholder="https://media.paul-lab.com/…" /></div>
       </details>
     </div>
   );
@@ -282,7 +291,7 @@ function BlockFields({ block, onChange, uploadMedia, uploadingTarget }: {
   if (block.type === 'text') {
     return <div className="space-y-5">
       <Field label="Heading (optional)" value={valueText(block.content.heading)} onChange={(heading) => update({ heading })} />
-      <TextArea label="Body" rows={8} value={valueText(block.content.body)} onChange={(body) => update({ body })} placeholder="Separate paragraphs with a blank line." />
+      <TextArea label="Body" rows={8} value={valueText(block.content.body)} onChange={(body) => update({ body })} placeholder="Separate paragraphs with a blank line." markdown />
     </div>;
   }
 
@@ -291,7 +300,7 @@ function BlockFields({ block, onChange, uploadMedia, uploadingTarget }: {
       <MediaField label="Image" value={valueText(block.content.url)} onChange={(url) => update({ url })} onUpload={(file) => uploadTo(file, 'image', (url) => update({ url }))} uploading={uploadingTarget === `${block.id}:image`} preview="wide" />
       <div className="grid gap-5 md:grid-cols-2">
         <Field label="Alt text" value={valueText(block.content.alt)} onChange={(alt) => update({ alt })} />
-        <Field label="Caption" value={valueText(block.content.caption)} onChange={(caption) => update({ caption })} />
+        <Field label="Caption" value={valueText(block.content.caption)} onChange={(caption) => update({ caption })} hint="Supports Markdown links: [link text](https://example.com)" />
       </div>
     </div>;
   }
@@ -351,15 +360,15 @@ function BlockFields({ block, onChange, uploadMedia, uploadingTarget }: {
 
   if (block.type === 'video') {
     return <div className="grid gap-5 md:grid-cols-2">
-      <div className="md:col-span-2"><Field label="Video / YouTube / Vimeo URL" value={valueText(block.content.url)} onChange={(url) => update({ url })} /></div>
+      <div className="md:col-span-2"><MediaField label="Video" mediaType="video" value={valueText(block.content.url)} onChange={(url) => update({ url })} onUpload={(file) => uploadTo(file, 'video', (url) => update({ url }))} uploading={uploadingTarget === `${block.id}:video`} preview="wide" /></div>
       <MediaField label="Poster image" value={valueText(block.content.posterUrl)} onChange={(posterUrl) => update({ posterUrl })} onUpload={(file) => uploadTo(file, 'poster', (posterUrl) => update({ posterUrl }))} uploading={uploadingTarget === `${block.id}:poster`} preview="wide" />
-      <Field label="Caption" value={valueText(block.content.caption)} onChange={(caption) => update({ caption })} />
+      <Field label="Caption" value={valueText(block.content.caption)} onChange={(caption) => update({ caption })} hint="Supports Markdown links: [link text](https://example.com)" />
     </div>;
   }
 
   if (block.type === 'quote') {
     return <div className="space-y-5">
-      <TextArea label="Quote" value={valueText(block.content.quote)} onChange={(quote) => update({ quote })} />
+      <TextArea label="Quote" value={valueText(block.content.quote)} onChange={(quote) => update({ quote })} markdown />
       <Field label="Attribution" value={valueText(block.content.attribution)} onChange={(attribution) => update({ attribution })} />
     </div>;
   }
@@ -376,7 +385,7 @@ function BlockFields({ block, onChange, uploadMedia, uploadingTarget }: {
         <p className="text-xs font-semibold capitalize text-[#737373]">{side} column</p>
         <MediaField label="Image" value={valueText(column.imageUrl)} onChange={(imageUrl) => updateColumn(side, { imageUrl })} onUpload={(file) => uploadTo(file, side, (imageUrl) => updateColumn(side, { imageUrl }))} uploading={uploadingTarget === `${block.id}:${side}`} />
         <Field label="Heading" value={valueText(column.heading)} onChange={(heading) => updateColumn(side, { heading })} />
-        <TextArea label="Body" value={valueText(column.body)} onChange={(body) => updateColumn(side, { body })} />
+        <TextArea label="Body" value={valueText(column.body)} onChange={(body) => updateColumn(side, { body })} markdown />
       </div>)}
     </div>;
   }
@@ -411,9 +420,9 @@ function BlockPreview({ block, projectTitle, coverImageUrl }: { block: ProjectBl
       {imageUrl ? <img src={imageUrl} alt="" className="absolute inset-0 h-full w-full object-cover" /> : <div className="absolute inset-0 grid place-items-center text-white/35"><ImageIcon size={38} /></div>}
       <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/15 to-transparent" />
       <div className="relative w-full p-8 md:p-12">
-        {valueText(content.eyebrow) && <p className="mb-3 text-[10px] font-bold uppercase tracking-[0.22em] text-white/70">{valueText(content.eyebrow)}</p>}
-        <h2 className="max-w-3xl text-4xl font-semibold leading-[0.95] md:text-6xl">{valueText(content.heading) || projectTitle || 'Project title'}</h2>
-        {valueText(content.subheading) && <p className="mt-5 max-w-xl text-base text-white/75 md:text-xl">{valueText(content.subheading)}</p>}
+        {valueText(content.eyebrow) && <p className="mb-3 text-[10px] font-bold uppercase tracking-[0.22em] text-white/70"><MarkdownText inline>{valueText(content.eyebrow)}</MarkdownText></p>}
+        <h2 className="max-w-3xl text-4xl font-semibold leading-[0.95] md:text-6xl"><MarkdownText inline>{valueText(content.heading) || projectTitle || 'Project title'}</MarkdownText></h2>
+        {valueText(content.subheading) && <p className="mt-5 max-w-xl text-base text-white/75 md:text-xl"><MarkdownText inline>{valueText(content.subheading)}</MarkdownText></p>}
       </div>
     </section>;
   }
@@ -422,8 +431,8 @@ function BlockPreview({ block, projectTitle, coverImageUrl }: { block: ProjectBl
     const body = valueText(content.body);
     return <section className="bg-white px-7 py-12 md:px-14 md:py-16">
       <div className="mx-auto max-w-3xl">
-        {valueText(content.heading) && <h2 className="mb-6 text-3xl font-semibold md:text-4xl">{valueText(content.heading)}</h2>}
-        {body ? <div className="space-y-4 text-base font-light leading-8 text-[#555]">{body.split(/\n{2,}/).filter(Boolean).map((paragraph, index) => <p key={`${paragraph.slice(0, 20)}-${index}`} className="whitespace-pre-line">{paragraph}</p>)}</div> : <p className="text-sm text-[#aaa]">Add text in the editor panel.</p>}
+        {valueText(content.heading) && <h2 className="mb-6 text-3xl font-semibold md:text-4xl"><MarkdownText inline>{valueText(content.heading)}</MarkdownText></h2>}
+        {body ? <MarkdownText className="text-base font-light leading-8 text-[#555]">{body}</MarkdownText> : <p className="text-sm text-[#aaa]">Add text in the editor panel.</p>}
       </div>
     </section>;
   }
@@ -431,7 +440,7 @@ function BlockPreview({ block, projectTitle, coverImageUrl }: { block: ProjectBl
   if (block.type === 'image') {
     const url = valueText(content.url) || valueText(content.imageUrl);
     if (!url) return <PreviewEmpty icon={ImageIcon} label="Upload an image from the editor panel" />;
-    return <figure className="bg-white"><img src={url} alt={valueText(content.alt) || ''} className="block h-auto max-h-[720px] w-full object-contain" />{valueText(content.caption) && <figcaption className="px-6 py-4 text-sm text-[#737373]">{valueText(content.caption)}</figcaption>}</figure>;
+    return <figure className="bg-white"><img src={url} alt={valueText(content.alt) || ''} className="block h-auto max-h-[720px] w-full object-contain" />{valueText(content.caption) && <figcaption className="px-6 py-4 text-sm text-[#737373]"><MarkdownText inline>{valueText(content.caption)}</MarkdownText></figcaption>}</figure>;
   }
 
   if (block.type === 'gallery') {
@@ -439,26 +448,29 @@ function BlockPreview({ block, projectTitle, coverImageUrl }: { block: ProjectBl
     if (!images.length) return <PreviewEmpty icon={Images} label="Upload photos from the editor panel" />;
     const columns = content.columns === 3 ? 'md:grid-cols-3' : content.columns === 2 ? 'md:grid-cols-2' : 'grid-cols-1';
     const gap = content.gap === 'none' ? 'gap-0' : 'gap-3 p-3';
-    return <section className={`grid grid-cols-1 bg-white ${columns} ${gap}`}>{images.map((image, index) => <figure key={`${image.url}-${index}`} className="min-w-0"><img src={image.url} alt={image.alt || ''} className={`block w-full object-cover ${content.square ? 'aspect-square' : 'h-auto'}`} />{image.caption && <figcaption className="px-3 py-2 text-xs text-[#737373]">{image.caption}</figcaption>}</figure>)}</section>;
+    return <section className={`grid grid-cols-1 bg-white ${columns} ${gap}`}>{images.map((image, index) => <figure key={`${image.url}-${index}`} className="min-w-0"><img src={image.url} alt={image.alt || ''} className={`block w-full object-cover ${content.square ? 'aspect-square' : 'h-auto'}`} />{image.caption && <figcaption className="px-3 py-2 text-xs text-[#737373]"><MarkdownText inline>{image.caption}</MarkdownText></figcaption>}</figure>)}</section>;
   }
 
   if (block.type === 'video') {
     const poster = valueText(content.posterUrl);
-    return <figure className="relative grid aspect-video place-items-center overflow-hidden bg-[#111] text-white">{poster && <img src={poster} alt="" className="absolute inset-0 h-full w-full object-cover opacity-70" />}<div className="relative text-center"><span className="mx-auto grid h-14 w-14 place-items-center rounded-full bg-white/90 text-[#111]"><Video size={22} /></span><p className="mt-3 text-xs font-semibold">{valueText(content.url) ? 'Video preview' : 'Add a video URL'}</p></div></figure>;
+    const url = valueText(content.url);
+    const isDirectVideo = url.startsWith('blob:') || /\.(mp4|webm|mov)(?:$|\?)/i.test(url);
+    if (isDirectVideo) return <figure className="bg-black"><video className="aspect-video w-full object-contain" src={url} poster={poster || undefined} controls muted playsInline />{valueText(content.caption) && <figcaption className="bg-white px-6 py-4 text-sm text-[#737373]"><MarkdownText inline>{valueText(content.caption)}</MarkdownText></figcaption>}</figure>;
+    return <figure className="relative grid aspect-video place-items-center overflow-hidden bg-[#111] text-white">{poster && <img src={poster} alt="" className="absolute inset-0 h-full w-full object-cover opacity-70" />}<div className="relative text-center"><span className="mx-auto grid h-14 w-14 place-items-center rounded-full bg-white/90 text-[#111]"><Video size={22} /></span><p className="mt-3 text-xs font-semibold">{url ? 'YouTube / Vimeo video' : 'Upload a video or add a URL'}</p></div></figure>;
   }
 
   if (block.type === 'quote') {
-    return <figure className="bg-light-coral px-8 py-16 text-white md:px-14 md:py-20"><blockquote className="text-3xl font-medium leading-tight md:text-5xl">“{valueText(content.quote) || 'Add a statement in the editor panel.'}”</blockquote>{valueText(content.attribution) && <figcaption className="mt-7 text-xs font-bold uppercase tracking-[0.18em] text-white/75">— {valueText(content.attribution)}</figcaption>}</figure>;
+    return <figure className="bg-light-coral px-8 py-16 text-white md:px-14 md:py-20"><blockquote className="text-3xl font-medium leading-tight md:text-5xl">“<MarkdownText inline>{valueText(content.quote) || 'Add a statement in the editor panel.'}</MarkdownText>”</blockquote>{valueText(content.attribution) && <figcaption className="mt-7 text-xs font-bold uppercase tracking-[0.18em] text-white/75">— <MarkdownText inline>{valueText(content.attribution)}</MarkdownText></figcaption>}</figure>;
   }
 
   if (block.type === 'twoColumn') {
     const left = valueObject(content.left);
     const right = valueObject(content.right);
-    return <section className="grid gap-8 bg-white px-7 py-12 md:grid-cols-2 md:px-12">{[left, right].map((column, index) => <article key={index} className="space-y-4">{valueText(column.imageUrl) ? <img src={valueText(column.imageUrl)} alt="" className="aspect-[4/3] w-full object-cover" /> : <div className="grid aspect-[4/3] place-items-center bg-[#f2f2f2] text-[#aaa]"><ImageIcon size={24} /></div>}{valueText(column.heading) && <h3 className="text-2xl font-semibold">{valueText(column.heading)}</h3>}{valueText(column.body) && <p className="whitespace-pre-line text-sm leading-7 text-[#5f5f5f]">{valueText(column.body)}</p>}</article>)}</section>;
+    return <section className="grid gap-8 bg-white px-7 py-12 md:grid-cols-2 md:px-12">{[left, right].map((column, index) => <article key={index} className="space-y-4">{valueText(column.imageUrl) ? <img src={valueText(column.imageUrl)} alt="" className="aspect-[4/3] w-full object-cover" /> : <div className="grid aspect-[4/3] place-items-center bg-[#f2f2f2] text-[#aaa]"><ImageIcon size={24} /></div>}{valueText(column.heading) && <h3 className="text-2xl font-semibold"><MarkdownText inline>{valueText(column.heading)}</MarkdownText></h3>}{valueText(column.body) && <MarkdownText className="text-sm leading-7 text-[#5f5f5f]">{valueText(column.body)}</MarkdownText>}</article>)}</section>;
   }
 
   const steps = Array.isArray(content.steps) ? content.steps as ProcessStep[] : [];
-  return <section className="bg-[#f3f3f3] px-7 py-12 md:px-12"><h2 className="mb-8 text-3xl font-semibold">{valueText(content.heading) || 'Process'}</h2>{steps.length ? <div className="grid gap-px bg-[#d5d5d5] md:grid-cols-2">{steps.map((step, index) => <article key={`${step.title}-${index}`} className="bg-[#f3f3f3] p-6"><p className="text-xs font-bold text-light-coral">{String(index + 1).padStart(2, '0')}</p>{step.imageUrl && <img src={step.imageUrl} alt="" className="mt-4 aspect-[4/3] w-full object-cover" />}<h3 className="mt-4 text-xl font-semibold">{step.title}</h3>{step.description && <p className="mt-2 text-sm leading-6 text-[#666]">{step.description}</p>}</article>)}</div> : <p className="text-sm text-[#999]">Add process steps in the editor panel.</p>}</section>;
+  return <section className="bg-[#f3f3f3] px-7 py-12 md:px-12"><h2 className="mb-8 text-3xl font-semibold"><MarkdownText inline>{valueText(content.heading) || 'Process'}</MarkdownText></h2>{steps.length ? <div className="grid gap-px bg-[#d5d5d5] md:grid-cols-2">{steps.map((step, index) => <article key={`${step.title}-${index}`} className="bg-[#f3f3f3] p-6"><p className="text-xs font-bold text-light-coral">{String(index + 1).padStart(2, '0')}</p>{step.imageUrl && <img src={step.imageUrl} alt="" className="mt-4 aspect-[4/3] w-full object-cover" />}<h3 className="mt-4 text-xl font-semibold"><MarkdownText inline>{step.title}</MarkdownText></h3>{step.description && <MarkdownText className="mt-2 text-sm leading-6 text-[#666]">{step.description}</MarkdownText>}</article>)}</div> : <p className="text-sm text-[#999]">Add process steps in the editor panel.</p>}</section>;
 }
 
 function BlockPreviewCard({ block, index, selected, dragging, dragOver, projectTitle, coverImageUrl, onSelect, onDragStart, onDragOver, onDrop, onDragEnd }: {
@@ -747,7 +759,7 @@ export default function AdminApp() {
       setIsDirty(true);
       return asset.url;
     } catch (requestError) {
-      setError(requestError instanceof Error ? requestError.message : 'Unable to upload this image.');
+      setError(requestError instanceof Error ? requestError.message : 'Unable to upload this media file.');
       return null;
     } finally {
       setUploadingTarget(null);
@@ -945,7 +957,7 @@ export default function AdminApp() {
             {selectedBlock ? <>
               <div className="flex items-start gap-3">
                 {(() => { const Icon = BLOCK_META[selectedBlock.type].icon; return <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-[#edf3ff] text-[#1769ff]"><Icon size={18} /></span>; })()}
-                <div className="min-w-0"><h2 className="text-sm font-semibold">Edit {BLOCK_META[selectedBlock.type].label}</h2><p className="mt-1 text-xs leading-5 text-[#737373]">Changes appear immediately in the formal preview on the left.</p></div>
+                <div className="min-w-0"><h2 className="text-sm font-semibold">Edit {BLOCK_META[selectedBlock.type].label}</h2><p className="mt-1 text-xs leading-5 text-[#737373]">Changes appear immediately in the preview. Text content supports Markdown and links.</p></div>
               </div>
 
               <div className="mt-5 rounded-lg border border-[#e2e2e2] bg-[#fafafa] p-3">
@@ -978,7 +990,7 @@ export default function AdminApp() {
                   uploadingTarget={uploadingTarget}
                 />
               </div>
-              {hasLocalMedia && <div className="mt-5 rounded-md border border-amber-200 bg-amber-50 p-3 text-xs leading-5 text-amber-800">A local image preview is visible. Save and Publish stay disabled until R2 returns a permanent URL.</div>}
+              {hasLocalMedia && <div className="mt-5 rounded-md border border-amber-200 bg-amber-50 p-3 text-xs leading-5 text-amber-800">A local media preview is visible. Save and Publish stay disabled until R2 returns a permanent URL.</div>}
             </> : <div className="grid min-h-56 place-items-center rounded-lg border border-dashed border-[#d5d5d5] bg-[#fafafa] p-6 text-center"><div><FileText className="mx-auto text-[#aaa]" size={24} /><p className="mt-3 text-sm font-semibold">Select a preview block</p><p className="mt-1 text-xs leading-5 text-[#858585]">Click a block on the left to edit its content here.</p></div></div>}
           </div> : <div className="space-y-6 p-5">
             <section>
