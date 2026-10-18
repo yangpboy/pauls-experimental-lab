@@ -72,7 +72,7 @@ const GARAGE_CATEGORY_BY_SLUG = Object.fromEntries(
 ) as Record<string, GarageCategory>;
 
 const tiniProjectViewFromLocation = (): TiniProjectView =>
-  new URLSearchParams(window.location.search).get('view') === 'web' ? 'web' : 'deck';
+  new URLSearchParams(window.location.search).get('view') === 'deck' ? 'deck' : 'web';
 
 const portfolioPageFromLocation = (): PortfolioPage => {
   if (projectSlugFromPath()) return 'garage';
@@ -929,6 +929,19 @@ function PortfolioApp() {
   }, []);
 
   useEffect(() => {
+    if (routeProjectSlug !== 'dark-side-of-the-tini') return;
+    const nextUrl = new URL(window.location.href);
+    const requestedView = nextUrl.searchParams.get('view');
+    if (requestedView === 'web' || requestedView === 'deck') return;
+    nextUrl.searchParams.set('view', 'web');
+    window.history.replaceState(
+      { ...(window.history.state ?? {}), tiniProjectView: 'web' },
+      '',
+      `${nextUrl.pathname}${nextUrl.search}`,
+    );
+  }, [routeProjectSlug]);
+
+  useEffect(() => {
     if (!routeProjectSlug) return;
 
     let cancelled = false;
@@ -1015,7 +1028,7 @@ function PortfolioApp() {
 
     setProjectLikes(post.likesCount);
     setProjectShares(post.sharesCount);
-    setTiniProjectView('deck');
+    setTiniProjectView(post.slug === 'dark-side-of-the-tini' ? 'web' : 'deck');
     setProjectTransitionSlug(origin === 'about' ? post.slug : null);
     pageScrollPositionRef.current = window.scrollY;
     window.history.replaceState(
@@ -1024,7 +1037,8 @@ function PortfolioApp() {
       `${window.location.pathname}${window.location.search}${window.location.hash}`,
     );
 
-    window.history.pushState({ projectModal: true }, '', `/projects/${encodeURIComponent(post.slug)}`);
+    const projectUrl = `/projects/${encodeURIComponent(post.slug)}${post.slug === 'dark-side-of-the-tini' ? '?view=web' : ''}`;
+    window.history.pushState({ projectModal: true }, '', projectUrl);
     setSelectedProject(null);
     setProjectError(null);
     setProjectLoading(true);
@@ -1050,8 +1064,7 @@ function PortfolioApp() {
     setTiniProjectView(view);
 
     const nextUrl = new URL(window.location.href);
-    if (view === 'web') nextUrl.searchParams.set('view', 'web');
-    else nextUrl.searchParams.delete('view');
+    nextUrl.searchParams.set('view', view);
     window.history.replaceState(
       { ...(window.history.state ?? {}), tiniProjectView: view },
       '',
