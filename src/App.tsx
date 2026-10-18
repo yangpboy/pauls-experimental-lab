@@ -57,19 +57,44 @@ const projectSlugFromPath = () => {
 type PortfolioPage = 'head' | 'garage' | 'sketchbook' | 'about';
 type TiniProjectView = 'deck' | 'web';
 
+const GARAGE_CATEGORIES = ['All', 'Product Design', 'Portfolio', 'Spatial Design'] as const;
+type GarageCategory = typeof GARAGE_CATEGORIES[number];
+
+const GARAGE_CATEGORY_SLUGS: Record<GarageCategory, string> = {
+  All: '',
+  'Product Design': 'product-design',
+  Portfolio: 'portfolio',
+  'Spatial Design': 'spatial-design',
+};
+
+const GARAGE_CATEGORY_BY_SLUG = Object.fromEntries(
+  Object.entries(GARAGE_CATEGORY_SLUGS).map(([category, slug]) => [slug, category]),
+) as Record<string, GarageCategory>;
+
 const tiniProjectViewFromLocation = (): TiniProjectView =>
   new URLSearchParams(window.location.search).get('view') === 'web' ? 'web' : 'deck';
 
 const portfolioPageFromLocation = (): PortfolioPage => {
   if (projectSlugFromPath()) return 'garage';
 
-  const hashPage = window.location.hash.slice(1);
+  const hashPage = window.location.hash.slice(1).split('/')[0];
   return hashPage === 'garage' || hashPage === 'sketchbook' || hashPage === 'about'
     ? hashPage
     : 'head';
 };
 
-const portfolioPageHref = (page: PortfolioPage) => page === 'head' ? '/' : `/#${page}`;
+const garageCategoryFromLocation = (): GarageCategory => {
+  if (portfolioPageFromLocation() !== 'garage') return 'All';
+  const categorySlug = window.location.hash.slice(1).split('/')[1] ?? '';
+  return GARAGE_CATEGORY_BY_SLUG[categorySlug.toLowerCase()] ?? 'All';
+};
+
+const portfolioPageHref = (page: PortfolioPage, garageCategory: GarageCategory = 'All') => {
+  if (page === 'head') return '/';
+  if (page !== 'garage') return `/#${page}`;
+  const categorySlug = GARAGE_CATEGORY_SLUGS[garageCategory];
+  return categorySlug ? `/#garage/${categorySlug}` : '/#garage';
+};
 
 const SKETCHBOOK_PAGES = [
   {
@@ -641,7 +666,7 @@ export default function App() {
 
 function PortfolioApp() {
   const [activePage, setActivePage] = useState<PortfolioPage>(() => portfolioPageFromLocation());
-  const [activeGarageCategory, setActiveGarageCategory] = useState('All');
+  const [activeGarageCategory, setActiveGarageCategory] = useState<GarageCategory>(() => garageCategoryFromLocation());
   const [garageFilterOpen, setGarageFilterOpen] = useState(false);
   const [garageView, setGarageView] = useState<'deck' | 'grid'>('deck');
   const [headRenderMode, setHeadRenderMode] = useState<'normal' | 'low'>('normal');
@@ -766,7 +791,7 @@ function PortfolioApp() {
     [projects]
   );
 
-  const garageCategories = ['All', 'Product Design', 'Portfolio', 'Spatial Design'];
+  const garageCategories = GARAGE_CATEGORIES;
 
   const filteredGaragePosts = useMemo(
     () => activeGarageCategory === 'All'
@@ -894,6 +919,7 @@ function PortfolioApp() {
         setProjectError(null);
       } else {
         setActivePage(portfolioPageFromLocation());
+        setActiveGarageCategory(garageCategoryFromLocation());
         setSelectedProject(null);
         setProjectError(null);
       }
@@ -957,16 +983,25 @@ function PortfolioApp() {
 
   const navigateToPage = (page: PortfolioPage) => {
     setIsMobileMenuOpen(false);
+    const nextHref = portfolioPageHref(page, activeGarageCategory);
     if (routeProjectSlug) {
-      window.history.replaceState({}, '', portfolioPageHref(page));
+      window.history.replaceState({}, '', nextHref);
       setRouteProjectSlug(null);
-    } else if (`${window.location.pathname}${window.location.hash}` !== portfolioPageHref(page)) {
-      window.history.pushState({}, '', portfolioPageHref(page));
+    } else if (`${window.location.pathname}${window.location.hash}` !== nextHref) {
+      window.history.pushState({}, '', nextHref);
     }
     setActivePage(page);
     window.requestAnimationFrame(() => {
       window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
     });
+  };
+
+  const selectGarageCategory = (category: GarageCategory) => {
+    setActiveGarageCategory(category);
+    const nextHref = portfolioPageHref('garage', category);
+    if (!routeProjectSlug && `${window.location.pathname}${window.location.hash}` !== nextHref) {
+      window.history.pushState({}, '', nextHref);
+    }
   };
 
   const openGaragePost = (post: ProjectSummary, origin: 'about' | 'garage' = 'garage') => {
@@ -1002,7 +1037,7 @@ function PortfolioApp() {
       return;
     }
 
-    window.history.replaceState({}, '', '/#garage');
+    window.history.replaceState({}, '', portfolioPageHref('garage', activeGarageCategory));
     setRouteProjectSlug(null);
     setSelectedProject(null);
     setProjectError(null);
@@ -1469,7 +1504,7 @@ function PortfolioApp() {
                   <button
                     type="button"
                     key={category}
-                    onClick={() => setActiveGarageCategory(category)}
+                    onClick={() => selectGarageCategory(category)}
                     className={`h-8 shrink-0 rounded-full border px-3.5 font-mono text-[10px] font-black uppercase leading-none transition hover:border-light-coral xl:px-4 xl:text-xs ${
                       activeGarageCategory === category
                         ? 'border-light-coral bg-light-coral text-black'
@@ -1537,7 +1572,7 @@ function PortfolioApp() {
                           type="button"
                           key={category}
                           onClick={() => {
-                            setActiveGarageCategory(category);
+                            selectGarageCategory(category);
                             setGarageFilterOpen(false);
                           }}
                           className={`flex min-h-10 w-full items-center justify-between gap-3 rounded-xl px-3 py-2 text-left font-mono text-[11px] font-black uppercase tracking-[.06em] transition ${
@@ -1599,7 +1634,7 @@ function PortfolioApp() {
                           type="button"
                           key={category}
                           onClick={() => {
-                            setActiveGarageCategory(category);
+                            selectGarageCategory(category);
                             setGarageFilterOpen(false);
                           }}
                           className={`flex min-h-10 w-full items-center justify-between gap-3 rounded-xl px-3 py-2 text-left font-mono text-[11px] font-black uppercase tracking-[.06em] transition ${
@@ -1653,7 +1688,7 @@ function PortfolioApp() {
                   No published projects in this category yet.
                 </div>
               )}
-              {SHOW_SKETCHBOOK && (activeGarageCategory === 'All' || activeGarageCategory === 'Sketch') && (
+              {SHOW_SKETCHBOOK && activeGarageCategory === 'All' && (
                 <button
                   onClick={() => navigateToPage('sketchbook')}
                   className="group flex min-h-[500px] flex-col rounded-3xl border border-light-ink/25 bg-transparent p-5 text-left transition hover:border-light-coral dark:border-white/25 md:min-h-[560px] md:p-7"
